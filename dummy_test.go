@@ -7,7 +7,7 @@ import (
 )
 
 func TestDummyProtocol(t *testing.T) {
-	peers := map[PartyID]string {
+	peers := map[PartyID]string{
 		0: "localhost:6660",
 		1: "localhost:6661",
 		2: "localhost:6662",
@@ -24,7 +24,7 @@ func TestDummyProtocol(t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i+10))
+		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i + 10))
 	}
 
 	network := GetTestingTCPNetwork(P)
@@ -45,4 +45,18 @@ func TestDummyProtocol(t *testing.T) {
 	}
 
 	fmt.Println("test completed")
+}
+
+func TestTesting(t *testing.T) {
+	got := 1
+	if got != 1 {
+		t.Errorf("Abs(-1 = %d; want 1", got)
+	}
+}
+
+func TestEval(t *testing.T) {
+
+	t.Run("circuit1", func(t *testing.T) {
+		fmt.Println("we managed it!")
+	})
 }
