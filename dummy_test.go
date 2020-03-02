@@ -58,5 +58,9 @@ func TestEval(t *testing.T) {
 
 	t.Run("circuit1", func(t *testing.T) {
 		fmt.Println("we managed it!")
+		fmt.Println("trying to access testcircuits ", TestCircuits)
+	})
+	t.Run("circuit2", func(t *testing.T) {
+		fmt.Println("circuit2")
 	})
 }
