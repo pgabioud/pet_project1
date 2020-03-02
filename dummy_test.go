@@ -55,12 +55,54 @@ func TestTesting(t *testing.T) {
 }
 
 func TestEval(t *testing.T) {
-
+	a := 2
 	t.Run("circuit1", func(t *testing.T) {
-		fmt.Println("we managed it!")
-		fmt.Println("trying to access testcircuits ", TestCircuits)
+		fmt.Println("we managed it!", a)
+		b := TestCircuits[0]
+		test(b)
+		a++
+
 	})
 	t.Run("circuit2", func(t *testing.T) {
-		fmt.Println("circuit2")
+		fmt.Println("circuit2", a)
 	})
+}
+
+func test(circ *TestCircuit) {
+
+	peers := circ.Peers
+
+	N := uint64(len(peers))
+	P := make([]*LocalParty, N, N)
+	dummyProtocol := make([]*DummyProtocol, N, N)
+
+	var err error
+	wg := new(sync.WaitGroup)
+	for i := range peers {
+		P[i], err = NewLocalParty(i, peers)
+		P[i].WaitGroup = wg
+		check(err)
+
+		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i + 10), circ)
+	}
+
+	network := GetTestingTCPNetwork(P)
+	fmt.Println("parties connected")
+
+	for i, Pi := range dummyProtocol {
+		Pi.BindNetwork(network[i])
+	}
+
+	for _, p := range dummyProtocol {
+		p.Add(1)
+		go p.Run()
+	}
+	wg.Wait()
+
+	for _, p := range dummyProtocol {
+		fmt.Println(p, "completed with output", p.Output)
+	}
+
+	fmt.Println("test completed")
+}
 }

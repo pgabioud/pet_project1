@@ -1,24 +1,11 @@
 package main
 
+/*
 import (
 	"encoding/binary"
 	"fmt"
-	"math"
-	"math/rand"
 	"net"
-	"time"
 )
-
-func mod(a, b int64) int64 {
-	m := a % b
-	if a < 0 && b < 0 {
-		m -= b
-	}
-	if a < 0 && b > 0 {
-		m += b
-	}
-	return m
-}
 
 type DummyMessage struct {
 	Party PartyID
@@ -97,48 +84,24 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 	}
 }
 
-func (cep *DummyProtocol) Run(circuit *TestCircuit) {
+func (cep *DummyProtocol) Run() {
 
 	fmt.Println(cep, "is running")
-	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
-	var s = uint64(math.Pow(2, 16)) + 1 //prime number used for modulus ring
-	var secretshares = make([]uint64, len(cep.Peers))
-	//get N-1 random values
-	var tot uint64 = 0
-	for i := range cep.Peers {
-		if i != (cep.ID) {
-			secretshares[i] = uint64(rand.Int63n(int64(s)))
 
-			tot = tot + secretshares[i]
-
-		}
-	}
-	secretshares[cep.ID] = uint64(mod(int64(cep.Input)-int64(tot), int64(s)))
-
-	fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
-	for i, peer := range cep.Peers {
+	for _, peer := range cep.Peers {
 		if peer.ID != cep.ID {
-			peer.Chan <- DummyMessage{cep.ID, secretshares[i]}
+			fmt.Println(cep, "making dummy message with input", cep.Input)
+			peer.Chan <- DummyMessage{cep.ID, cep.Input}
 		}
 	}
 
-	received := make(map[PartyID]uint64)
-	received[cep.ID] = secretshares[cep.ID]
+	received := 0
 	for m := range cep.Chan {
 		fmt.Println(cep, "received message from", m.Party, ":", m.Value)
-
-		received[m.Party] = m.Value
-		fmt.Println(cep, "received is ", received)
-		if len(received) == len(cep.Peers) {
-			cep.Output := circuit(received[0], received[1], received[2])
-			for i, peer := range cep.Peers {
-				if peer.ID != cep.ID {
-					peer.Chan <- DummyMessage{cep.ID, cep.Output}
-				}
-			}
-
+		cep.Output += m.Value
+		received++
+		if received == len(cep.Peers)-1 {
 			close(cep.Chan)
-			fmt.Println("closed")
 		}
 	}
 
@@ -146,3 +109,4 @@ func (cep *DummyProtocol) Run(circuit *TestCircuit) {
 		cep.WaitGroup.Done()
 	}
 }
+*/
