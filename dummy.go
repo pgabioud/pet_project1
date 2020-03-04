@@ -97,7 +97,8 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 	}
 }
 
-func (cep *DummyProtocol) Run(circuit *TestCircuit) {
+//func (cep *DummyProtocol) Run(circuit *TestCircuit) {
+func (cep *DummyProtocol) Run() {
 
 	fmt.Println(cep, "is running")
 	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
@@ -130,13 +131,14 @@ func (cep *DummyProtocol) Run(circuit *TestCircuit) {
 		received[m.Party] = m.Value
 		fmt.Println(cep, "received is ", received)
 		if len(received) == len(cep.Peers) {
-			cep.Output := circuit(received[0], received[1], received[2])
-			for i, peer := range cep.Peers {
-				if peer.ID != cep.ID {
-					peer.Chan <- DummyMessage{cep.ID, cep.Output}
+			/*
+				cep.Output := circuit(received[0], received[1], received[2])
+				for i, peer := range cep.Peers {
+					if peer.ID != cep.ID {
+						peer.Chan <- DummyMessage{cep.ID, cep.Output}
+					}
 				}
-			}
-
+			*/
 			close(cep.Chan)
 			fmt.Println("closed")
 		}

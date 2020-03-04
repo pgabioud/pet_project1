@@ -83,7 +83,7 @@ func test(circ *TestCircuit) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i + 10), circ)
+		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i + 10))
 	}
 
 	network := GetTestingTCPNetwork(P)
@@ -104,5 +104,4 @@ func test(circ *TestCircuit) {
 	}
 
 	fmt.Println("test completed")
-}
 }
