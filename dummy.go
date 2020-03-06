@@ -131,6 +131,7 @@ func (cep *DummyProtocol) Run() {
 		received[m.Party] = m.Value
 		fmt.Println(cep, "received is ", received)
 		if len(received) == len(cep.Peers) {
+			fmt.Println(TestCircuits[0])
 			/*
 				cep.Output := circuit(received[0], received[1], received[2])
 				for i, peer := range cep.Peers {
