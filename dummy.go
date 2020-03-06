@@ -22,6 +22,7 @@ func mod(a, b int64) int64 {
 	return m
 }
 
+//DummyMessage is simple value message for party
 type DummyMessage struct {
 	Party PartyID
 	Value uint64
@@ -136,20 +137,39 @@ func (cep *DummyProtocol) Run() {
 		received[m.Party] = m.Value
 		fmt.Println(cep, "received is ", received)
 		if len(received) == len(cep.Peers) {
-			fmt.Println(TestCircuits[0])
-			/*
-				cep.Output := circuit(received[0], received[1], received[2])
-				for i, peer := range cep.Peers {
-					if peer.ID != cep.ID {
-						peer.Chan <- DummyMessage{cep.ID, cep.Output}
+			//assume we need to use circuit 1
+			wire := make([]uint64, len(TestCircuits[0].Circuit))
+			for _, op := range TestCircuits[0].Circuit {
+				fmt.Println(op)
+				switch op.(type) {
+				case *Input:
+
+					wire[op.Output()] = secretshares[op.(*Input).Party]
+				case *Add:
+					wire[op.Output()] = uint64(mod(int64(wire[op.(*Add).In1])+int64(wire[op.(*Add).In2]), int64(s)))
+				case *Reveal:
+					cep.Output = wire[op.(*Reveal).In]
+					for _, peer := range cep.Peers {
+						if peer.ID != cep.ID {
+							peer.Chan <- DummyMessage{cep.ID, cep.Output}
+						}
 					}
+					received := 0
+					for m := range cep.Chan {
+						cep.Output = uint64(mod(int64(m.Value)+int64(cep.Output), int64(s)))
+						received++
+						if received == len(cep.Peers)-1 {
+							close(cep.Chan)
+						}
+					}
+
+					fmt.Println("HUZZAH")
+				default:
+					fmt.Println("op not implemented or does not exist")
 				}
-			*/
-			close(cep.Chan)
-			fmt.Println("closed")
+			}
 		}
 	}
-
 	if cep.WaitGroup != nil {
 		cep.WaitGroup.Done()
 	}
