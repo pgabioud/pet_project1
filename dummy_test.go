@@ -13,6 +13,9 @@ func TestDummyProtocol(t *testing.T) {
 		2: "localhost:6662",
 	}
 
+	//Circuit Id to test
+	var circuitID CircuitID = 1
+
 	N := uint64(len(peers))
 	P := make([]*LocalParty, N, N)
 	dummyProtocol := make([]*DummyProtocol, N, N)
@@ -24,7 +27,7 @@ func TestDummyProtocol(t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i + 10))
+		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i+10), circuitID)
 	}
 
 	network := GetTestingTCPNetwork(P)
@@ -58,8 +61,7 @@ func TestEval(t *testing.T) {
 	a := 2
 	t.Run("circuit1", func(t *testing.T) {
 		fmt.Println("we managed it!", a)
-		b := TestCircuits[0]
-		test(b)
+		test(1)
 		a++
 
 	})
@@ -68,9 +70,9 @@ func TestEval(t *testing.T) {
 	})
 }
 
-func test(circ *TestCircuit) {
+func test(ciruitID CircuitID) {
 
-	peers := circ.Peers
+	peers := TestCircuits[ciruitID-1].Peers
 
 	N := uint64(len(peers))
 	P := make([]*LocalParty, N, N)
@@ -83,7 +85,7 @@ func test(circ *TestCircuit) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i + 10))
+		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i+10), ciruitID)
 	}
 
 	network := GetTestingTCPNetwork(P)

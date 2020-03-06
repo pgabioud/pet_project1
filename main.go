@@ -7,12 +7,13 @@ import (
 	"time"
 )
 
+///////////////////////////////////////////////////////////////////gérer cas où les main sont run avec différents input circuits ?
 func main() {
 	prog := os.Args[0]
 	args := os.Args[1:]
 
-	if len(args) < 2 {
-		fmt.Println("Usage:", prog, "[Party ID] [Input]")
+	if len(args) < 3 {
+		fmt.Println("Usage:", prog, "[Party ID] [Input] [CircuitID]")
 		os.Exit(1)
 	}
 
@@ -28,11 +29,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	Client(PartyID(partyID), partyInput)
+	circuitID, errCircuitId := strconv.ParseUint(args[1], 10, 64)
+	if (errCircuitId != nil) || (circuitID > 8) || (circuitID == 0) {
+		fmt.Println("Circuit input should be an integer between 1 and 8")
+		os.Exit(1)
+	}
+
+	Client(PartyID(partyID), partyInput, CircuitID(circuitID))
 }
 
 //Client function
-func Client(partyID PartyID, partyInput uint64) {
+func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
 
 	//N := uint64(len(peers))
 	peers := map[PartyID]string{
@@ -56,7 +63,7 @@ func Client(partyID PartyID, partyInput uint64) {
 	<-time.After(time.Second) // Leave time for others to connect
 
 	// Create a new circuit evaluation protocol
-	dummyProtocol := lp.NewDummyProtocol(partyInput)
+	dummyProtocol := lp.NewDummyProtocol(partyInput, circuitID)
 	// Bind evaluation protocol to the network
 	dummyProtocol.BindNetwork(network)
 

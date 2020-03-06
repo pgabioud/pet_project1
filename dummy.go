@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+type CircuitID uint64
+
 func mod(a, b int64) int64 {
 	m := a % b
 	if a < 0 && b < 0 {
@@ -30,6 +32,8 @@ type DummyProtocol struct {
 	Chan  chan DummyMessage
 	Peers map[PartyID]*DummyRemote
 
+	circuitID CircuitID
+
 	Input  uint64
 	Output uint64
 }
@@ -39,9 +43,10 @@ type DummyRemote struct {
 	Chan chan DummyMessage
 }
 
-func (lp *LocalParty) NewDummyProtocol(input uint64) *DummyProtocol {
+func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID) *DummyProtocol {
 	cep := new(DummyProtocol)
 	cep.LocalParty = lp
+	cep.circuitID = circuitID
 	cep.Chan = make(chan DummyMessage, 32)
 	cep.Peers = make(map[PartyID]*DummyRemote, len(lp.Peers))
 	for i, rp := range lp.Peers {
