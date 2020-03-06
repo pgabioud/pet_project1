@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/rand"
 	"net"
-	"reflect"
 	"time"
 )
 
@@ -137,13 +136,14 @@ func (cep *DummyProtocol) Run() {
 			wire := make([]uint64, len(TestCircuits[0].Circuit))
 			for _, op := range TestCircuits[0].Circuit {
 				fmt.Println(op)
-				switch reflect.TypeOf(op).String()[6:] {
-				case "Input":
-					wire[op.Output()] = secretshares[op.Inputs()[0]]
-				case "Add":
-					wire[op.Output()] = uint64(mod(int64(wire[op.Inputs()[0]])+int64(wire[op.Inputs()[1]]), int64(s)))
-				case "Reveal":
-					cep.Output = wire[op.Inputs()[0]]
+				switch op.(type) {
+				case *Input:
+
+					wire[op.Output()] = secretshares[op.(*Input).Party]
+				case *Add:
+					wire[op.Output()] = uint64(mod(int64(wire[op.(*Add).In1])+int64(wire[op.(*Add).In2]), int64(s)))
+				case *Reveal:
+					cep.Output = wire[op.(*Reveal).In]
 					for _, peer := range cep.Peers {
 						if peer.ID != cep.ID {
 							peer.Chan <- DummyMessage{cep.ID, cep.Output}
