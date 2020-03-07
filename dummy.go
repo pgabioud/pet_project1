@@ -137,13 +137,12 @@ func (cep *DummyProtocol) Run() {
 		received[m.Party] = m.Value
 		fmt.Println(cep, "received is ", received)
 		if len(received) == len(cep.Peers) {
-			//assume we need to use circuit 1
-			wire := make([]uint64, len(TestCircuits[0].Circuit))
-			for _, op := range TestCircuits[0].Circuit {
+			wire := make([]uint64, len(TestCircuits[cep.circuitID-1].Circuit))
+			fmt.Println("circuitID = ", cep.circuitID)
+			for _, op := range TestCircuits[cep.circuitID-1].Circuit {
 				fmt.Println(op)
 				switch op.(type) {
 				case *Input:
-
 					wire[op.Output()] = secretshares[op.(*Input).Party]
 				case *Add:
 					wire[op.Output()] = uint64(mod(int64(wire[op.(*Add).In1])+int64(wire[op.(*Add).In2]), int64(s)))
