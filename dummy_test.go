@@ -85,7 +85,7 @@ func test(ciruitID CircuitID) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i+10), ciruitID)
+		dummyProtocol[i] = P[i].NewDummyProtocol(TestCircuits[ciruitID-1].Inputs[i][GateID(i)], ciruitID)
 	}
 
 	network := GetTestingTCPNetwork(P)
