@@ -45,7 +45,7 @@ func (ao Add) Inputs() []WireID {
 	return []WireID{ao.In1, ao.In2}
 }
 
-//Addcst gate
+//AddCst gate
 type AddCst struct {
 	In       WireID
 	CstValue uint64
@@ -69,7 +69,7 @@ type Sub struct {
 	Out WireID
 }
 
-//Outputs getter for sub gate
+//Output getter for sub gate
 func (so Sub) Output() WireID {
 	return so.Out
 }
@@ -119,7 +119,7 @@ type Reveal struct {
 	Out WireID
 }
 
-//Outputs getter for reveal gate
+//Output getter for reveal gate
 func (ro Reveal) Output() WireID {
 	return ro.Out
 }
