@@ -143,7 +143,6 @@ func (cep *DummyProtocol) Run() {
 
 			//evaluate circuit in gates.go
 			evaluate(cep, received, s)
-
 		}
 	}
 	if cep.WaitGroup != nil {

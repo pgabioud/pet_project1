@@ -58,21 +58,26 @@ func TestTesting(t *testing.T) {
 }
 
 func TestEval(t *testing.T) {
-	a := 2
 	t.Run("circuit1", func(t *testing.T) {
 		test(1, t)
-		fmt.Println("circuit3", a)
-		a++
 	})
 
 	t.Run("circuit2", func(t *testing.T) {
-		fmt.Println("circuit2", a)
 		test(2, t)
 	})
 
 	t.Run("circuit3", func(t *testing.T) {
-		fmt.Println("circuit3", a)
 		test(3, t)
+	})
+
+	t.Run("circuit4", func(t *testing.T) {
+		test(4, t)
+	})
+	t.Run("circuit5", func(t *testing.T) {
+		test(5, t)
+	})
+	t.Run("circuit6", func(t *testing.T) {
+		test(6, t)
 	})
 }
 
@@ -109,6 +114,9 @@ func test(circuitID CircuitID, t *testing.T) {
 
 	for _, p := range dummyProtocol {
 		fmt.Println(p, "completed with output", p.Output)
+		if p.Output != TestCircuits[circuitID-1].ExpOutput {
+			t.Errorf("Party %d got wrong answer: %d when expected output was: %d", p.ID, p.Output, TestCircuits[circuitID-1].ExpOutput)
+		}
 	}
 
 	fmt.Println("test completed")
