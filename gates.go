@@ -3,15 +3,24 @@ package main
 import "fmt"
 
 //evaluates different gates for cep using circuitID and shares in modulus ring s
-func evaluate(cep *DummyProtocol, secretshares []uint64, s uint64) {
+func evaluate(cep *DummyProtocol, secrets map[PartyID]uint64, s uint64) {
 	wire := make([]uint64, len(TestCircuits[cep.circuitID-1].Circuit))
 	for _, op := range TestCircuits[cep.circuitID-1].Circuit {
-		fmt.Println(op)
 		switch op.(type) {
+
 		case *Input:
-			wire[op.Output()] = secretshares[op.(*Input).Party]
+			wire[op.Output()] = secrets[op.(*Input).Party]
+
 		case *Add:
 			wire[op.Output()] = uint64(mod(int64(wire[op.(*Add).In1])+int64(wire[op.(*Add).In2]), int64(s)))
+
+		case *Sub:
+			fmt.Println("party ", cep.ID, " has values ", wire[op.(*Sub).In1], wire[op.(*Sub).In2])
+			wire[op.Output()] = uint64(mod(int64(wire[op.(*Sub).In1])-int64(wire[op.(*Sub).In2]), int64(s)))
+			fmt.Println("party ", cep.ID, " computed ", wire[op.Output()])
+		case *MultCst:
+			wire[op.Output()] = uint64(mod(int64(wire[op.(*MultCst).In])*int64(op.(*MultCst).CstValue), int64(s)))
+
 		case *Reveal:
 			cep.Output = wire[op.(*Reveal).In]
 			for _, peer := range cep.Peers {

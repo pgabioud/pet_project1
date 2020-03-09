@@ -146,7 +146,7 @@ func (cep *DummyProtocol) Run() {
 			fmt.Println("circuitID = ", cep.circuitID)
 
 			//evaluate circuit in gates.go
-			evaluate(cep, secretshares, s)
+			evaluate(cep, received, s)
 
 		}
 	}

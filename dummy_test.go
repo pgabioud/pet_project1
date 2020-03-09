@@ -60,17 +60,23 @@ func TestTesting(t *testing.T) {
 func TestEval(t *testing.T) {
 	a := 2
 	t.Run("circuit1", func(t *testing.T) {
+		test(1, t)
 		fmt.Println("we managed it!", a)
-		test(1)
 		a++
 
 	})
 	t.Run("circuit2", func(t *testing.T) {
 		fmt.Println("circuit2", a)
+		test(2, t)
+	})
+
+	t.Run("circuit3", func(t *testing.T) {
+		fmt.Println("circuit3", a)
+		test(3, t)
 	})
 }
 
-func test(ciruitID CircuitID) {
+func test(ciruitID CircuitID, t *testing.T) {
 
 	peers := TestCircuits[ciruitID-1].Peers
 

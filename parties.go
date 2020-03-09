@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 //PartyID party id
@@ -22,6 +23,7 @@ type LocalParty struct {
 }
 
 func check(err error) {
+	time.Sleep((10 * time.Millisecond))
 	if err != nil {
 		panic(err.Error())
 	}
