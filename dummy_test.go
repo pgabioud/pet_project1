@@ -61,10 +61,10 @@ func TestEval(t *testing.T) {
 	a := 2
 	t.Run("circuit1", func(t *testing.T) {
 		test(1, t)
-		fmt.Println("we managed it!", a)
+		fmt.Println("circuit3", a)
 		a++
-
 	})
+
 	t.Run("circuit2", func(t *testing.T) {
 		fmt.Println("circuit2", a)
 		test(2, t)
@@ -76,9 +76,9 @@ func TestEval(t *testing.T) {
 	})
 }
 
-func test(ciruitID CircuitID, t *testing.T) {
+func test(circuitID CircuitID, t *testing.T) {
 
-	peers := TestCircuits[ciruitID-1].Peers
+	peers := TestCircuits[circuitID-1].Peers
 
 	N := uint64(len(peers))
 	P := make([]*LocalParty, N, N)
@@ -91,7 +91,7 @@ func test(ciruitID CircuitID, t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		dummyProtocol[i] = P[i].NewDummyProtocol(TestCircuits[ciruitID-1].Inputs[i][GateID(i)], ciruitID)
+		dummyProtocol[i] = P[i].NewDummyProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID)
 	}
 
 	network := GetTestingTCPNetwork(P)

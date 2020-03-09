@@ -35,18 +35,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	Client(PartyID(partyID), partyInput, CircuitID(circuitID))
+	if int(partyID) < len(TestCircuits[circuitID-1].Peers) {
+		Client(PartyID(partyID), partyInput, CircuitID(circuitID))
+	}
 }
 
 //Client function
 func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
 
 	//N := uint64(len(peers))
-	peers := map[PartyID]string{
-		0: "localhost:6660",
-		1: "localhost:6661",
-		2: "localhost:6662",
-	}
+	peers := TestCircuits[circuitID-1].Peers
 
 	// Create a local party
 	lp, err := NewLocalParty(partyID, peers)
