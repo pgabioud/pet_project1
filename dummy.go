@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+//CircuitID uint to select the circuit to run
 type CircuitID uint64
 
 func mod(a, b int64) int64 {
@@ -28,6 +29,7 @@ type DummyMessage struct {
 	Value uint64
 }
 
+//DummyProtocol basic structure for a protocol
 type DummyProtocol struct {
 	*LocalParty
 	Chan  chan DummyMessage
@@ -39,11 +41,13 @@ type DummyProtocol struct {
 	Output uint64
 }
 
+//DummyRemote template for remote party
 type DummyRemote struct {
 	*RemoteParty
 	Chan chan DummyMessage
 }
 
+//NewDummyProtocol initializes SMC for defined circuit with ID = circuitID
 func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID) *DummyProtocol {
 	cep := new(DummyProtocol)
 	cep.LocalParty = lp
@@ -62,6 +66,7 @@ func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID) *Dummy
 	return cep
 }
 
+//BindNetwork connects parties
 func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 	for partyID, conn := range nw.Conns {
 
@@ -103,7 +108,7 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 	}
 }
 
-//func (cep *DummyProtocol) Run(circuit *TestCircuit) {
+//Run runs SMC protocol
 func (cep *DummyProtocol) Run() {
 
 	fmt.Println(cep, "is running")
@@ -137,36 +142,12 @@ func (cep *DummyProtocol) Run() {
 		received[m.Party] = m.Value
 		fmt.Println(cep, "received is ", received)
 		if len(received) == len(cep.Peers) {
-			wire := make([]uint64, len(TestCircuits[cep.circuitID-1].Circuit))
-			fmt.Println("circuitID = ", cep.circuitID)
-			for _, op := range TestCircuits[cep.circuitID-1].Circuit {
-				fmt.Println(op)
-				switch op.(type) {
-				case *Input:
-					wire[op.Output()] = secretshares[op.(*Input).Party]
-				case *Add:
-					wire[op.Output()] = uint64(mod(int64(wire[op.(*Add).In1])+int64(wire[op.(*Add).In2]), int64(s)))
-				case *Reveal:
-					cep.Output = wire[op.(*Reveal).In]
-					for _, peer := range cep.Peers {
-						if peer.ID != cep.ID {
-							peer.Chan <- DummyMessage{cep.ID, cep.Output}
-						}
-					}
-					received := 0
-					for m := range cep.Chan {
-						cep.Output = uint64(mod(int64(m.Value)+int64(cep.Output), int64(s)))
-						received++
-						if received == len(cep.Peers)-1 {
-							close(cep.Chan)
-						}
-					}
 
-					fmt.Println("HUZZAH")
-				default:
-					fmt.Println("op not implemented or does not exist")
-				}
-			}
+			fmt.Println("circuitID = ", cep.circuitID)
+
+			//evaluate circuit in gates.go
+			evaluate(cep, secretshares, s)
+
 		}
 	}
 	if cep.WaitGroup != nil {
