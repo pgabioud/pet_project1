@@ -127,7 +127,7 @@ func (cep *DummyProtocol) Run() {
 	}
 	secretshares[cep.ID] = uint64(mod(int64(cep.Input)-int64(tot), int64(s)))
 
-	fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
+	//fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
 	for i, peer := range cep.Peers {
 		if peer.ID != cep.ID {
 			peer.Chan <- DummyMessage{cep.ID, secretshares[i]}
@@ -137,13 +137,13 @@ func (cep *DummyProtocol) Run() {
 	received := make(map[PartyID]uint64)
 	received[cep.ID] = secretshares[cep.ID]
 	for m := range cep.Chan {
-		fmt.Println(cep, "received message from", m.Party, ":", m.Value)
+		//fmt.Println(cep, "received message from", m.Party, ":", m.Value)
 
 		received[m.Party] = m.Value
-		fmt.Println(cep, "received is ", received)
+		//fmt.Println(cep, "received is ", received)
 		if len(received) == len(cep.Peers) {
 
-			fmt.Println("circuitID = ", cep.circuitID)
+			//fmt.Println("circuitID = ", cep.circuitID)
 
 			//evaluate circuit in gates.go
 			evaluate(cep, received, s)

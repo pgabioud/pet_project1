@@ -15,11 +15,17 @@ func evaluate(cep *DummyProtocol, secrets map[PartyID]uint64, s uint64) {
 			wire[op.Output()] = uint64(mod(int64(wire[op.(*Add).In1])+int64(wire[op.(*Add).In2]), int64(s)))
 
 		case *Sub:
-			fmt.Println("party ", cep.ID, " has values ", wire[op.(*Sub).In1], wire[op.(*Sub).In2])
 			wire[op.Output()] = uint64(mod(int64(wire[op.(*Sub).In1])-int64(wire[op.(*Sub).In2]), int64(s)))
-			fmt.Println("party ", cep.ID, " computed ", wire[op.Output()])
+
 		case *MultCst:
 			wire[op.Output()] = uint64(mod(int64(wire[op.(*MultCst).In])*int64(op.(*MultCst).CstValue), int64(s)))
+
+		case *AddCst:
+			if cep.ID == 0 {
+				wire[op.Output()] = uint64(mod(int64(wire[op.(*AddCst).In])+int64(op.(*AddCst).CstValue), int64(s)))
+			} else {
+				wire[op.Output()] = wire[op.(*AddCst).In]
+			}
 
 		case *Reveal:
 			cep.Output = wire[op.(*Reveal).In]
@@ -37,7 +43,6 @@ func evaluate(cep *DummyProtocol, secrets map[PartyID]uint64, s uint64) {
 				}
 			}
 
-			fmt.Println("HUZZAH")
 		default:
 			fmt.Println("op not implemented or does not exist")
 		}
