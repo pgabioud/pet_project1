@@ -36,6 +36,7 @@ type DummyProtocol struct {
 	Peers map[PartyID]*DummyRemote
 
 	circuitID CircuitID
+	Beavers   []uint64
 
 	Input  uint64
 	Output uint64
@@ -113,7 +114,8 @@ func (cep *DummyProtocol) Run() {
 
 	fmt.Println(cep, "is running")
 	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
-	var s = uint64(math.Pow(2, 16)) + 1 //prime number used for modulus ring
+	var s = int64(math.Pow(2, 16)) + 1 //prime number used for modulus ring
+	fmt.Println(s)
 	var secretshares = make([]uint64, len(cep.Peers))
 	//get N-1 random values
 	var tot uint64 = 0
@@ -143,9 +145,12 @@ func (cep *DummyProtocol) Run() {
 
 			//evaluate circuit in gates.go
 			evaluate(cep, received, s)
+			close(cep.Chan)
 		}
 	}
 	if cep.WaitGroup != nil {
 		cep.WaitGroup.Done()
+
 	}
+
 }
