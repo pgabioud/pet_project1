@@ -1,5 +1,6 @@
 package main
 
+// TestCircuit is the structure representing a circuit
 type TestCircuit struct {
 	Peers     map[PartyID]string            // Mapping from PartyID to network addresses
 	Inputs    map[PartyID]map[GateID]uint64 // The partys' input for each gate
@@ -7,6 +8,7 @@ type TestCircuit struct {
 	ExpOutput uint64                        // Expected output
 }
 
+// TestCircuits is the slice of all circuits
 var TestCircuits = []*TestCircuit{&Circuit1, &Circuit2, &Circuit3, &Circuit4, &Circuit5, &Circuit6, &Circuit7, &Circuit8}
 
 var Circuit1 = TestCircuit{

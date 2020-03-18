@@ -49,12 +49,15 @@ type DummyRemote struct {
 }
 
 //NewDummyProtocol initializes SMC for defined circuit with ID = circuitID
-func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID) *DummyProtocol {
+func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID, sharedBeavers *[]uint64) *DummyProtocol {
 	cep := new(DummyProtocol)
 	cep.LocalParty = lp
 	cep.circuitID = circuitID
 	cep.Chan = make(chan DummyMessage, 32)
 	cep.Peers = make(map[PartyID]*DummyRemote, len(lp.Peers))
+	for i := 0; i < 3; i++ {
+		cep.Beavers[i] = (*sharedBeavers)[i]
+	}
 	for i, rp := range lp.Peers {
 		cep.Peers[i] = &DummyRemote{
 			RemoteParty: rp,
@@ -115,19 +118,18 @@ func (cep *DummyProtocol) Run() {
 	fmt.Println(cep, "is running")
 	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
 	var s = int64(math.Pow(2, 16)) + 1 //prime number used for modulus ring
-	fmt.Println(s)
 	var secretshares = make([]uint64, len(cep.Peers))
 	//get N-1 random values
 	var tot uint64 = 0
 	for i := range cep.Peers {
 		if i != (cep.ID) {
-			secretshares[i] = uint64(rand.Int63n(int64(s)))
+			secretshares[i] = uint64(rand.Int63n(s))
 
 			tot = tot + secretshares[i]
 
 		}
 	}
-	secretshares[cep.ID] = mod(int64(cep.Input)-int64(tot), s)
+	secretshares[cep.ID] = uint64(mod(int64(cep.Input)-int64(tot), s))
 
 	//fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
 	for i, peer := range cep.Peers {
@@ -145,12 +147,9 @@ func (cep *DummyProtocol) Run() {
 
 			//evaluate circuit in gates.go
 			evaluate(cep, &received, s)
-			close(cep.Chan)
 		}
 	}
 	if cep.WaitGroup != nil {
 		cep.WaitGroup.Done()
-
 	}
-
 }

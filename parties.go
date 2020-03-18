@@ -39,8 +39,8 @@ func NewLocalParty(id PartyID, peers map[PartyID]string) (*LocalParty, error) {
 	p.Addr = peers[id]
 
 	var err error
-	for pId, pAddr := range peers {
-		p.Peers[pId], err = NewRemoteParty(pId, pAddr)
+	for pID, pAddr := range peers {
+		p.Peers[pID], err = NewRemoteParty(pID, pAddr)
 		if err != nil {
 			return nil, err
 		}

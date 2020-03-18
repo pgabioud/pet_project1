@@ -29,8 +29,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	circuitID, errCircuitId := strconv.ParseUint(args[2], 10, 64)
-	if (errCircuitId != nil) || (circuitID > 8) || (circuitID == 0) {
+	circuitID, errCircuitID := strconv.ParseUint(args[2], 10, 64)
+	if (errCircuitID != nil) || (circuitID > 8) || (circuitID == 0) {
 		fmt.Println("Circuit input should be an integer between 1 and 8")
 		os.Exit(1)
 	}
