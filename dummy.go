@@ -12,7 +12,7 @@ import (
 //CircuitID uint to select the circuit to run
 type CircuitID uint64
 
-func mod(a, b int64) int64 {
+func mod(a, b int64) uint64 {
 	m := a % b
 	if a < 0 && b < 0 {
 		m -= b
@@ -20,7 +20,7 @@ func mod(a, b int64) int64 {
 	if a < 0 && b > 0 {
 		m += b
 	}
-	return m
+	return uint64(m)
 }
 
 //DummyMessage is simple value message for party
@@ -36,7 +36,7 @@ type DummyProtocol struct {
 	Peers map[PartyID]*DummyRemote
 
 	circuitID CircuitID
-	Beavers   []uint64
+	Beavers   [][]uint64
 
 	Input  uint64
 	Output uint64
@@ -127,7 +127,7 @@ func (cep *DummyProtocol) Run() {
 
 		}
 	}
-	secretshares[cep.ID] = uint64(mod(int64(cep.Input)-int64(tot), int64(s)))
+	secretshares[cep.ID] = mod(int64(cep.Input)-int64(tot), s)
 
 	//fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
 	for i, peer := range cep.Peers {
@@ -144,7 +144,7 @@ func (cep *DummyProtocol) Run() {
 			//fmt.Println(cep, "received is ", received)
 
 			//evaluate circuit in gates.go
-			evaluate(cep, received, s)
+			evaluate(cep, &received, s)
 			close(cep.Chan)
 		}
 	}
