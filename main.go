@@ -36,8 +36,14 @@ func main() {
 	}
 	genSharedBeavers := genAllBeaverTriplets(CircuitID(circuitID), len(TestCircuits[circuitID-1].Peers))
 
+	fmt.Println("genSharedBeavers done", genSharedBeavers)
 	if int(partyID) < len(TestCircuits[circuitID-1].Peers) {
-		Client(PartyID(partyID), partyInput, CircuitID(circuitID), &genSharedBeavers[int(partyID)])
+		nullBeavers := [][3]uint64{{0, 0, 0}}
+		if len(genSharedBeavers) > 0 {
+			Client(PartyID(partyID), partyInput, CircuitID(circuitID), &genSharedBeavers[int(partyID)])
+		} else {
+			Client(PartyID(partyID), partyInput, CircuitID(circuitID), &nullBeavers)
+		}
 	}
 }
 
