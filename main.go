@@ -34,14 +34,15 @@ func main() {
 		fmt.Println("Circuit input should be an integer between 1 and 8")
 		os.Exit(1)
 	}
+	genSharedBeavers := genAllBeaverTriplets(CircuitID(circuitID), len(TestCircuits[circuitID-1].Peers))
 
 	if int(partyID) < len(TestCircuits[circuitID-1].Peers) {
-		Client(PartyID(partyID), partyInput, CircuitID(circuitID))
+		Client(PartyID(partyID), partyInput, CircuitID(circuitID), &genSharedBeavers[int(partyID)])
 	}
 }
 
 //Client function
-func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
+func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, sharedBeavers *[][3]uint64) {
 
 	//N := uint64(len(peers))
 	peers := TestCircuits[circuitID-1].Peers
@@ -61,7 +62,8 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
 	<-time.After(time.Second) // Leave time for others to connect
 
 	// Create a new circuit evaluation protocol
-	dummyProtocol := lp.NewDummyProtocol(partyInput, circuitID)
+	dummyProtocol := lp.NewDummyProtocol(partyInput, circuitID, sharedBeavers)
+
 	// Bind evaluation protocol to the network
 	dummyProtocol.BindNetwork(network)
 

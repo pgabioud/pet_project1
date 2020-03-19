@@ -58,7 +58,6 @@ func evaluate(cep *DummyProtocol, secrets *map[PartyID]uint64, s int64) {
 
 //Revealgate gate
 func Revealgate(cep *DummyProtocol, s int64) {
-
 	for _, peer := range cep.Peers {
 		if peer.ID != cep.ID {
 			peer.Chan <- DummyMessage{cep.ID, cep.Output}

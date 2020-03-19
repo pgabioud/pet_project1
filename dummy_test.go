@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"testing"
 )
@@ -50,11 +51,30 @@ func TestDummyProtocol(t *testing.T) {
 	fmt.Println("test completed")
 }
 
-func TestTesting(t *testing.T) {
-	got := 1
-	if got != 1 {
-		t.Errorf("Abs(-1 = %d; want 1", got)
-	}
+func TestBeaver(t *testing.T) {
+
+	t.Run("countMultGate", func(t *testing.T) {
+		n := countMultGate(7)
+		if n != 3 {
+			t.Errorf("counting failed")
+		}
+	})
+	t.Run("genBeavers", func(t *testing.T) {
+		sharedBeavers := genBeavers(3)
+		var s = int64(math.Pow(2, 16)) + 1
+		for i := range sharedBeavers {
+			if mod(int64(sharedBeavers[i][0])*int64(sharedBeavers[i][1]), s) != sharedBeavers[i][2] {
+				t.Errorf("bad beaver triplet")
+			}
+		}
+	})
+	t.Run("genSharedBeavers", func(t *testing.T) {
+		beavers := genBeavers(3)
+		//var s = int64(math.Pow(2, 16)) + 1
+		sharedBeavers := genSharedBeavers(&beavers, 3)
+		fmt.Println(sharedBeavers)
+	})
+
 }
 
 func TestEval(t *testing.T) {

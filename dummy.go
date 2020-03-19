@@ -36,7 +36,7 @@ type DummyProtocol struct {
 	Peers map[PartyID]*DummyRemote
 
 	circuitID CircuitID
-	Beavers   [][]uint64
+	Beavers   [][3]uint64
 
 	Input  uint64
 	Output uint64
@@ -49,15 +49,15 @@ type DummyRemote struct {
 }
 
 //NewDummyProtocol initializes SMC for defined circuit with ID = circuitID
-func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID, sharedBeavers *[]uint64) *DummyProtocol {
+func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID, sharedBeavers *[][3]uint64) *DummyProtocol {
 	cep := new(DummyProtocol)
 	cep.LocalParty = lp
 	cep.circuitID = circuitID
 	cep.Chan = make(chan DummyMessage, 32)
 	cep.Peers = make(map[PartyID]*DummyRemote, len(lp.Peers))
-	for i := 0; i < 3; i++ {
-		cep.Beavers[i] = (*sharedBeavers)[i]
-	}
+
+	cep.Beavers = (*sharedBeavers)
+
 	for i, rp := range lp.Peers {
 		cep.Peers[i] = &DummyRemote{
 			RemoteParty: rp,
@@ -143,10 +143,11 @@ func (cep *DummyProtocol) Run() {
 	for m := range cep.Chan {
 		received[m.Party] = m.Value
 		if len(received) == len(cep.Peers) {
-			//fmt.Println(cep, "received is ", received)
+			fmt.Println(cep, "received is ", received)
 
 			//evaluate circuit in gates.go
 			evaluate(cep, &received, s)
+			close(cep.Chan)
 		}
 	}
 	if cep.WaitGroup != nil {

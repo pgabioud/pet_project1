@@ -23,7 +23,7 @@ func genBeavers(multGateCount uint64) [][3]uint64 {
 
 	var i uint64
 	for i = 0; i < multGateCount; i++ {
-		rand.Seed(time.Now().UTC().UnixNano())
+		rand.Seed(time.Now().UTC().UnixNano() / 10000000)
 		var singleBeavers = [3]uint64{uint64(rand.Int63n(s)), uint64(rand.Int63n(s))}
 		singleBeavers[2] = uint64(mod(int64(singleBeavers[0]*singleBeavers[1]), s))
 		beavers = append(beavers, singleBeavers)
@@ -36,16 +36,21 @@ func genSharedBeavers(beaverTriplet *[][3]uint64, nbPeers int) [][][3]uint64 {
 	var s = int64(math.Pow(2, 16)) + 1
 	var sharedBeavers = make([][][3]uint64, len(*beaverTriplet))
 
+	rand.Seed(time.Now().UTC().UnixNano() / 10000000)
+
+	for x := range sharedBeavers {
+		sharedBeavers[x] = make([][3]uint64, nbPeers)
+	}
 	for j := 0; j < len(*beaverTriplet); j++ {
 		var totA, totB, totC uint64 = 0, 0, 0
 		for i := 0; i < nbPeers-1; i++ {
 			var singleSharedBeavers [3]uint64
-			rand.Seed(time.Now().UTC().UnixNano())
 			singleSharedBeavers[0], singleSharedBeavers[1], singleSharedBeavers[2] = uint64(rand.Int63n(s)), uint64(rand.Int63n(s)), uint64(rand.Int63n(s))
 			totA += singleSharedBeavers[0]
 			totB += singleSharedBeavers[1]
 			totC += singleSharedBeavers[2]
 			sharedBeavers[i][j] = singleSharedBeavers
+
 		}
 		var singleSharedBeavers [3]uint64
 		singleSharedBeavers[0] = uint64(mod(int64((*beaverTriplet)[j][0])-int64(totA), s))
