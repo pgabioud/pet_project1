@@ -23,17 +23,17 @@ func mod(a, b int64) uint64 {
 	return uint64(m)
 }
 
-//DummyMessage is simple value message for party
-type DummyMessage struct {
+//Message is simple value message for party
+type Message struct {
 	Party PartyID
 	Value uint64
 }
 
-//DummyProtocol basic structure for a protocol
-type DummyProtocol struct {
+//Protocol structure for a protocol
+type Protocol struct {
 	*LocalParty
-	Chan  chan DummyMessage
-	Peers map[PartyID]*DummyRemote
+	Chan  chan Message
+	Peers map[PartyID]*Remote
 
 	circuitID CircuitID
 	Beavers   [][3]uint64
@@ -42,26 +42,26 @@ type DummyProtocol struct {
 	Output uint64
 }
 
-//DummyRemote template for remote party
-type DummyRemote struct {
+//Remote template for remote party
+type Remote struct {
 	*RemoteParty
-	Chan chan DummyMessage
+	Chan chan Message
 }
 
-//NewDummyProtocol initializes SMC for defined circuit with ID = circuitID
-func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID, sharedBeavers *[][3]uint64) *DummyProtocol {
-	cep := new(DummyProtocol)
+//NewProtocol initializes SMC for defined circuit with ID = circuitID
+func (lp *LocalParty) NewProtocol(input uint64, circuitID CircuitID, sharedBeavers *[][3]uint64) *Protocol {
+	cep := new(Protocol)
 	cep.LocalParty = lp
 	cep.circuitID = circuitID
-	cep.Chan = make(chan DummyMessage, 32)
-	cep.Peers = make(map[PartyID]*DummyRemote, len(lp.Peers))
+	cep.Chan = make(chan Message, 32)
+	cep.Peers = make(map[PartyID]*Remote, len(lp.Peers))
 
 	cep.Beavers = (*sharedBeavers)
 
 	for i, rp := range lp.Peers {
-		cep.Peers[i] = &DummyRemote{
+		cep.Peers[i] = &Remote{
 			RemoteParty: rp,
-			Chan:        make(chan DummyMessage, 32),
+			Chan:        make(chan Message, 32),
 		}
 	}
 
@@ -71,7 +71,7 @@ func (lp *LocalParty) NewDummyProtocol(input uint64, circuitID CircuitID, shared
 }
 
 //BindNetwork connects parties
-func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
+func (cep *Protocol) BindNetwork(nw *TCPNetworkStruct) {
 	for partyID, conn := range nw.Conns {
 
 		if partyID == cep.ID {
@@ -81,7 +81,7 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 		rp := cep.Peers[partyID]
 
 		// Receiving loop from remote
-		go func(conn net.Conn, rp *DummyRemote) {
+		go func(conn net.Conn, rp *Remote) {
 			for {
 				var id, val uint64
 				var err error
@@ -89,7 +89,7 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 				check(err)
 				err = binary.Read(conn, binary.BigEndian, &val)
 				check(err)
-				msg := DummyMessage{
+				msg := Message{
 					Party: PartyID(id),
 					Value: val,
 				}
@@ -99,8 +99,8 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 		}(conn, rp)
 
 		// Sending loop of remote
-		go func(conn net.Conn, rp *DummyRemote) {
-			var m DummyMessage
+		go func(conn net.Conn, rp *Remote) {
+			var m Message
 			var open = true
 			for open {
 				m, open = <-rp.Chan
@@ -113,7 +113,7 @@ func (cep *DummyProtocol) BindNetwork(nw *TCPNetworkStruct) {
 }
 
 //Run runs SMC protocol
-func (cep *DummyProtocol) Run() {
+func (cep *Protocol) Run() {
 
 	fmt.Println(cep, "is running")
 	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
@@ -134,7 +134,7 @@ func (cep *DummyProtocol) Run() {
 	//fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
 	for i, peer := range cep.Peers {
 		if peer.ID != cep.ID {
-			peer.Chan <- DummyMessage{cep.ID, secretshares[i]}
+			peer.Chan <- Message{cep.ID, secretshares[i]}
 		}
 	}
 
@@ -146,7 +146,7 @@ func (cep *DummyProtocol) Run() {
 			fmt.Println(cep, "received is ", received)
 
 			//evaluate circuit in gates.go
-			evaluate(cep, &received, s)
+			Evaluate(cep, &received, s)
 			close(cep.Chan)
 		}
 	}

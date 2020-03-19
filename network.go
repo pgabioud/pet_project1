@@ -8,7 +8,10 @@ import (
 	"time"
 )
 
+//CONNECT_ATTEMPTS is the maximum number of connection attempts
 const CONNECT_ATTEMPTS = 4
+
+//CONNECT_ATTEMPTS_DELAY is the delay between two connection attempts
 const CONNECT_ATTEMPTS_DELAY = 100
 
 //Network simple interface to connect a local party

@@ -2,8 +2,8 @@ package main
 
 import "fmt"
 
-//evaluates different gates for cep using circuitID and shares in modulus ring s
-func evaluate(cep *DummyProtocol, secrets *map[PartyID]uint64, s int64) {
+//Evaluate evaluates different gates for cep using circuitID and shares in modulus ring s
+func Evaluate(cep *Protocol, secrets *map[PartyID]uint64, s int64) {
 	wire := make([]uint64, len(TestCircuits[cep.circuitID-1].Circuit))
 	for _, op := range TestCircuits[cep.circuitID-1].Circuit {
 		switch op.(type) {
@@ -57,10 +57,10 @@ func evaluate(cep *DummyProtocol, secrets *map[PartyID]uint64, s int64) {
 }
 
 //Revealgate gate
-func Revealgate(cep *DummyProtocol, s int64) {
+func Revealgate(cep *Protocol, s int64) {
 	for _, peer := range cep.Peers {
 		if peer.ID != cep.ID {
-			peer.Chan <- DummyMessage{cep.ID, cep.Output}
+			peer.Chan <- Message{cep.ID, cep.Output}
 		}
 	}
 	received := 0

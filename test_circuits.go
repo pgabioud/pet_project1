@@ -9,9 +9,9 @@ type TestCircuit struct {
 }
 
 // TestCircuits is the slice of all circuits
-var TestCircuits = []*TestCircuit{&Circuit1, &Circuit2, &Circuit3, &Circuit4, &Circuit5, &Circuit6, &Circuit7, &Circuit8}
+var TestCircuits = []*TestCircuit{&circuit1, &circuit2, &circuit3, &circuit4, &circuit5, &circuit6, &circuit7, &circuit8, &circuit9}
 
-var Circuit1 = TestCircuit{
+var circuit1 = TestCircuit{
 	// f(a,b,c) = a + b + c
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -54,7 +54,7 @@ var Circuit1 = TestCircuit{
 	ExpOutput: 67,
 }
 
-var Circuit2 = TestCircuit{ // TODO check the ordering of the wires
+var circuit2 = TestCircuit{ // TODO check the ordering of the wires
 	// f(a,b) = a - b
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -86,7 +86,7 @@ var Circuit2 = TestCircuit{ // TODO check the ordering of the wires
 	ExpOutput: 10,
 }
 
-var Circuit3 = TestCircuit{
+var circuit3 = TestCircuit{
 	// f(a,b,c) = (a + b + c) * K
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -134,7 +134,7 @@ var Circuit3 = TestCircuit{
 	ExpOutput: 115,
 }
 
-var Circuit4 = TestCircuit{
+var circuit4 = TestCircuit{
 	// f(a,b,c) = (a + b + c) + K
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -182,7 +182,7 @@ var Circuit4 = TestCircuit{
 	ExpOutput: 30,
 }
 
-var Circuit5 = TestCircuit{
+var circuit5 = TestCircuit{
 	// f(a,b,c) = (a*K0 + b - c) + K1
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -235,7 +235,7 @@ var Circuit5 = TestCircuit{
 	ExpOutput: 35,
 }
 
-var Circuit6 = TestCircuit{
+var circuit6 = TestCircuit{
 	// f(a,b,c,d) = a+b+c+d
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -289,7 +289,7 @@ var Circuit6 = TestCircuit{
 	ExpOutput: 140,
 }
 
-var Circuit7 = TestCircuit{
+var circuit7 = TestCircuit{
 	// f(a,b,c) = (a*b) + (b*c) + (c*a)
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
@@ -347,8 +347,8 @@ var Circuit7 = TestCircuit{
 	ExpOutput: 161,
 }
 
-var Circuit8 = TestCircuit{
-	// f(a,b,c) = ((a+K0) + b*K1 - c)*(d+e)
+var circuit8 = TestCircuit{
+	// f(a,b,c,d,e) = ((a+K0) + b*K1 - c)*(d+e)
 	Peers: map[PartyID]string{
 		0: "localhost:6660",
 		1: "localhost:6661",
@@ -420,4 +420,73 @@ var Circuit8 = TestCircuit{
 		},
 	},
 	ExpOutput: 666,
+}
+
+var circuit9 = TestCircuit{
+	// f(a,b,c,d) = ((a*K0) + (b*c)) - ((d+K1)*a)
+	Peers: map[PartyID]string{
+		0: "localhost:6660",
+		1: "localhost:6661",
+		2: "localhost:6662",
+		3: "localhost:6663",
+	},
+	Inputs: map[PartyID]map[GateID]uint64{
+		0: {0: 10},
+		1: {1: 11},
+		2: {2: 12},
+		3: {3: 13},
+	},
+	Circuit: []Operation{
+		&Input{
+			Party: 0,
+			Out:   0,
+		},
+		&Input{
+			Party: 1,
+			Out:   1,
+		},
+		&Input{
+			Party: 2,
+			Out:   2,
+		},
+		&Input{
+			Party: 3,
+			Out:   3,
+		},
+		&MultCst{
+			In:       0,
+			CstValue: 42,
+			Out:      4,
+		},
+		&Mult{
+			In1: 1,
+			In2: 2,
+			Out: 5,
+		},
+		&Add{
+			In1: 4,
+			In2: 5,
+			Out: 6,
+		},
+		&AddCst{
+			In:       3,
+			CstValue: 24,
+			Out:      7,
+		},
+		&Mult{
+			In1: 0,
+			In2: 7,
+			Out: 8,
+		},
+		&Sub{
+			In1: 6,
+			In2: 8,
+			Out: 9,
+		},
+		&Reveal{
+			In:  9,
+			Out: 10,
+		},
+	},
+	ExpOutput: 182,
 }

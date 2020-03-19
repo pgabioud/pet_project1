@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-func countMultGate(circuitID CircuitID) uint64 {
+// CountMultGate count the number of multiplicction gate in a given circuit
+func CountMultGate(circuitID CircuitID) uint64 {
 	var counter uint64 = 0
 	for _, op := range TestCircuits[circuitID-1].Circuit {
 		_, ok := op.(*Mult)
@@ -17,8 +18,8 @@ func countMultGate(circuitID CircuitID) uint64 {
 	return counter
 }
 
-func genBeavers(multGateCount uint64) [][3]uint64 {
-	var s = int64(math.Pow(2, 16)) + 1
+// GenBeavers generate the required number of Beaver triplets
+func GenBeavers(multGateCount uint64, s int64) [][3]uint64 {
 	var beavers [][3]uint64
 
 	var i uint64
@@ -32,14 +33,14 @@ func genBeavers(multGateCount uint64) [][3]uint64 {
 	return beavers
 }
 
-func genSharedBeavers(beaverTriplet *[][3]uint64, nbPeers int) [][][3]uint64 {
-	var s = int64(math.Pow(2, 16)) + 1
-	var sharedBeavers = make([][][3]uint64, len(*beaverTriplet))
+// GenSharedBeavers generate the shared Beaver triplets for each party given the list of Beaver triplets
+func GenSharedBeavers(beaverTriplet *[][3]uint64, nbPeers int, s int64) [][][3]uint64 {
+	var sharedBeavers = make([][][3]uint64, nbPeers)
 
 	rand.Seed(time.Now().UTC().UnixNano() / 10000000)
 
 	for x := range sharedBeavers {
-		sharedBeavers[x] = make([][3]uint64, nbPeers)
+		sharedBeavers[x] = make([][3]uint64, len(*beaverTriplet))
 	}
 	for j := 0; j < len(*beaverTriplet); j++ {
 		var totA, totB, totC uint64 = 0, 0, 0
@@ -61,10 +62,13 @@ func genSharedBeavers(beaverTriplet *[][3]uint64, nbPeers int) [][][3]uint64 {
 	return sharedBeavers
 }
 
-func genAllBeaverTriplets(circuitID CircuitID, nbPeers int) [][][3]uint64 {
-	nbTriplets := countMultGate(circuitID)
-	beavers := genBeavers(nbTriplets)
-	sharedBeavers := genSharedBeavers(&beavers, nbPeers)
+// GenAllBeaverTriplets generate for a given circuit all the shared Beaver triplets for each party
+func GenAllBeaverTriplets(circuitID CircuitID) [][][3]uint64 {
+	var nbPeers = len(TestCircuits[circuitID-1].Peers)
+	var s = int64(math.Pow(2, 16)) + 1
+	nbTriplets := CountMultGate(circuitID)
+	beavers := GenBeavers(nbTriplets, s)
+	sharedBeavers := GenSharedBeavers(&beavers, nbPeers, s)
 
 	return sharedBeavers
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestDummyProtocol(t *testing.T) {
+func TestProtocol(t *testing.T) {
 	peers := map[PartyID]string{
 		0: "localhost:6660",
 		1: "localhost:6661",
@@ -15,11 +15,13 @@ func TestDummyProtocol(t *testing.T) {
 	}
 
 	//Circuit Id to test
-	//var circuitID CircuitID = 1
+	var circuitID CircuitID = 1
+
+	genSharedBeavers := GenAllBeaverTriplets(CircuitID(circuitID))
 
 	N := uint64(len(peers))
 	P := make([]*LocalParty, N, N)
-	dummyProtocol := make([]*DummyProtocol, N, N)
+	dummyProtocol := make([]*Protocol, N, N)
 
 	var err error
 	wg := new(sync.WaitGroup)
@@ -28,7 +30,13 @@ func TestDummyProtocol(t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		//dummyProtocol[i] = P[i].NewDummyProtocol(uint64(i+10), circuitID)
+		if len(genSharedBeavers) > 0 {
+			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &genSharedBeavers[i])
+		} else {
+			nullBeavers := [][3]uint64{{0, 0, 0}}
+			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &nullBeavers)
+		}
+
 	}
 
 	network := GetTestingTCPNetwork(P)
@@ -54,14 +62,14 @@ func TestDummyProtocol(t *testing.T) {
 func TestBeaver(t *testing.T) {
 
 	t.Run("countMultGate", func(t *testing.T) {
-		n := countMultGate(7)
+		n := CountMultGate(7)
 		if n != 3 {
 			t.Errorf("counting failed")
 		}
 	})
 	t.Run("genBeavers", func(t *testing.T) {
-		sharedBeavers := genBeavers(3)
 		var s = int64(math.Pow(2, 16)) + 1
+		sharedBeavers := GenBeavers(3, s)
 		for i := range sharedBeavers {
 			if mod(int64(sharedBeavers[i][0])*int64(sharedBeavers[i][1]), s) != sharedBeavers[i][2] {
 				t.Errorf("bad beaver triplet")
@@ -69,9 +77,9 @@ func TestBeaver(t *testing.T) {
 		}
 	})
 	t.Run("genSharedBeavers", func(t *testing.T) {
-		beavers := genBeavers(3)
-		//var s = int64(math.Pow(2, 16)) + 1
-		sharedBeavers := genSharedBeavers(&beavers, 3)
+		var s = int64(math.Pow(2, 16)) + 1
+		beavers := GenBeavers(3, s)
+		sharedBeavers := GenSharedBeavers(&beavers, 3, s)
 		fmt.Println(sharedBeavers)
 	})
 
@@ -93,21 +101,36 @@ func TestEval(t *testing.T) {
 	t.Run("circuit4", func(t *testing.T) {
 		test(4, t)
 	})
+
 	t.Run("circuit5", func(t *testing.T) {
 		test(5, t)
 	})
+
 	t.Run("circuit6", func(t *testing.T) {
 		test(6, t)
+	})
+
+	t.Run("circuit7", func(t *testing.T) {
+		test(7, t)
+	})
+
+	t.Run("circuit8", func(t *testing.T) {
+		test(8, t)
+	})
+
+	t.Run("circuit9", func(t *testing.T) {
+		test(9, t)
 	})
 }
 
 func test(circuitID CircuitID, t *testing.T) {
 
 	peers := TestCircuits[circuitID-1].Peers
+	genSharedBeavers := GenAllBeaverTriplets(CircuitID(circuitID))
 
 	N := uint64(len(peers))
 	P := make([]*LocalParty, N, N)
-	dummyProtocol := make([]*DummyProtocol, N, N)
+	dummyProtocol := make([]*Protocol, N, N)
 
 	var err error
 	wg := new(sync.WaitGroup)
@@ -116,7 +139,12 @@ func test(circuitID CircuitID, t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		//dummyProtocol[i] = P[i].NewDummyProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID)
+		if len(genSharedBeavers) > 0 {
+			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &genSharedBeavers[i])
+		} else {
+			nullBeavers := [][3]uint64{{0, 0, 0}}
+			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &nullBeavers)
+		}
 	}
 
 	network := GetTestingTCPNetwork(P)
