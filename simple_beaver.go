@@ -1,17 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
-
-	lattigo "github.com/ldsec/lattigo"
 )
 
 // CountMultGate count the number of multiplicction gate in a given circuit
 func CountMultGate(circuitID CircuitID) uint64 {
-	fmt.Println(lattigo.Ring.Butterfly(1, 1, 1, 1, 1))
 	var counter uint64 = 0
 	for _, op := range TestCircuits[circuitID-1].Circuit {
 		_, ok := op.(*Mult)
