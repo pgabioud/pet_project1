@@ -169,3 +169,71 @@ func test(circuitID CircuitID, t *testing.T) {
 
 	fmt.Println("test completed")
 }
+
+func TestVectorOperations(t *testing.T) {
+
+	t.Run("NewRandomVec", func(t *testing.T) {
+		v := NewRandomVec(20, 13)
+		if len(v) != 20 {
+			t.Errorf("wrong size")
+		}
+		for _, x := range v {
+			if x < 0 || x >= 13 {
+				t.Errorf("wrong random value")
+			}
+		}
+		fmt.Println(v)
+	})
+
+	t.Run("AddVec", func(t *testing.T) {
+		v1 := []uint64{1, 2, 3, 4, 5}
+		v2 := []uint64{6, 7, 8, 9, 10}
+		v1addv2 := AddVec(&v1, &v2, 11)
+		expectedRes := []uint64{7, 9, 0, 2, 4}
+		for i := 0; i < len(v1addv2); i++ {
+			if v1addv2[i] != expectedRes[i] {
+				t.Errorf("wrong addition: %d, should have been %d", v1addv2[i], expectedRes[i])
+			}
+		}
+		//fmt.Println(v1addv2)
+	})
+
+	t.Run("SubVec", func(t *testing.T) {
+		v1 := []uint64{1, 2, 3, 4, 5}
+		v2 := []uint64{6, 7, 8, 9, 10}
+		v1Subv2 := SubVec(&v1, &v2, 11)
+		expectedRes := []uint64{6, 6, 6, 6, 6}
+		for i := 0; i < len(v1Subv2); i++ {
+			if v1Subv2[i] != expectedRes[i] {
+				t.Errorf("wrong substraction: %d, should have been %d", v1Subv2[i], expectedRes[i])
+			}
+		}
+		//fmt.Println(v1Subv2)
+	})
+
+	t.Run("MulVec", func(t *testing.T) {
+		v1 := []uint64{1, 2, 3, 4, 5}
+		v2 := []uint64{6, 7, 8, 9, 10}
+		v1Mulv2 := MulVec(&v1, &v2, 11)
+		expectedRes := []uint64{6, 3, 2, 3, 6}
+		for i := 0; i < len(v1Mulv2); i++ {
+			if v1Mulv2[i] != expectedRes[i] {
+				t.Errorf("wrong multiplication: %d, should have been %d", v1Mulv2[i], expectedRes[i])
+			}
+		}
+		//fmt.Println(v1Mulv2)
+	})
+
+	t.Run("NegVec", func(t *testing.T) {
+		v1 := []uint64{1, 2, 3, 4, 5}
+		v1Neg := NegVec(&v1, 11)
+		expectedRes := []uint64{10, 9, 8, 7, 6}
+		for i := 0; i < len(v1Neg); i++ {
+			if v1Neg[i] != expectedRes[i] {
+				t.Errorf("wrong negation: %d, should have been %d", v1Neg[i], expectedRes[i])
+			}
+		}
+		//fmt.Println(v1Neg)
+	})
+
+}
