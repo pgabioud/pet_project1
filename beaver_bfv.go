@@ -1,8 +1,8 @@
 package main
 
-import {
-
-}
+import (
+	"github.com/ldsec/lattigo/ring"
+)
 
 //each Party i does
 /*
@@ -16,48 +16,45 @@ import {
 	di = Enc_sk_i (a_i) in R^2
 	foreach other party j
 		send di to j
-	
+
 
 */
 //each Party i does
-/*   foreach other party j do 
-		receive dj from j
-		r_ij <- Z^n _t
-		c_i = c_i - r_ij
-		encode r_ ij = to ring R
-		(e^0_ij, e^ij) <- xi _err in R^2
-		d_ij = Add(Mul(d_j, bi), r_ij) + (e^o _ij, e^ _ij)
-		send d_ij to Pj
+/*   foreach other party j do
+receive dj from j
+r_ij <- Z^n _t
+c_i = c_i - r_ij
+encode r_ ij = to ring R
+(e^0_ij, e^ij) <- xi _err in R^2
+d_ij = Add(Mul(d_j, bi), r_ij) + (e^o _ij, e^ _ij)
+send d_ij to Pj
 
 */
-//each Party i does 
-/* 
+//each Party i does
+/*
 	c' = (0,0) in R^2
 	foreach other party j
 		d _ji receive from j
 		c' = add(c', d_ij)
-	
+
 	c' = Dec_sk(c')
 	decode from R c'
 	c_i = c_i + c'
 */
 
 //BeaverProtocol stores all data that is reused between 2 runs
-type BeaverProtocol struct{
+type BeaverProtocol struct {
 	*LocalParty
 	Chan  chan Message
 	Peers map[PartyID]*Remote
 
-	c Vector
+	c []uint64
 	//elements in ring
-	a Poly
-	b Poly
+	a ring.Poly
+	b ring.Poly
 
-	sk uint64 
-
-
+	sk uint64
 }
-
 
 type BeaverRemoteParty struct {
 	*RemoteParty
@@ -66,23 +63,23 @@ type BeaverRemoteParty struct {
 
 type BeaverMessage struct {
 	Party PartyID
-	d Poly
+	d     ring.Poly
 }
 
 type BeaverInputs struct {
 	//inputs are the BFV scheme parameters
 	n uint64 //degree of R
-	s int64 //plaintext modulus
+	s int64  //plaintext modulus
 }
 
-func  (lp *LocalParty) New() *BeaverProtocol {
-
+func (lp *LocalParty) New() *BeaverProtocol {
+	return new(BeaverProtocol)
 }
 
 func Run() {
-
+	return
 }
 
 func BindNetwork() {
-
+	return
 }
