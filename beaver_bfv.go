@@ -1,6 +1,9 @@
 package main
 
 import (
+	"math"
+
+	"github.com/ldsec/lattigo/bfv"
 	"github.com/ldsec/lattigo/ring"
 )
 
@@ -50,36 +53,75 @@ type BeaverProtocol struct {
 
 	c []uint64
 	//elements in ring
-	a ring.Poly
-	b ring.Poly
-
-	sk uint64
+	a      *ring.Poly
+	b      *ring.Poly
+	params *bfv.Parameters
+	sk     uint64
 }
 
+//same as remoteParty
+/*
 type BeaverRemoteParty struct {
 	*RemoteParty
 	Chan chan Message
 }
+*/
 
+//BeaverMessage the value in message passed is a ring element
 type BeaverMessage struct {
 	Party PartyID
 	d     ring.Poly
 }
 
+//BeaverInputs are the BFV scheme parameters
 type BeaverInputs struct {
-	//inputs are the BFV scheme parameters
 	n uint64 //degree of R
 	s int64  //plaintext modulus
 }
 
-func (lp *LocalParty) New() *BeaverProtocol {
-	return new(BeaverProtocol)
+//New beaver protocol, creates the protocol
+func (lp *LocalParty) New(n uint64, T uint64) *BeaverProtocol {
+
+	bep := new(BeaverProtocol)
+	bep.LocalParty = lp
+	bep.Chan = make(chan Message, 32)
+	bep.Peers = make(map[PartyID]*Remote, len(lp.Peers))
+
+	for i, rp := range lp.Peers {
+		bep.Peers[i] = &Remote{
+			RemoteParty: rp,
+			Chan:        make(chan Message, 32),
+		}
+	}
+
+	bep.params = bfv.DefaultParams[bfv.PN13QP218]
+	/*
+		a_i <- Z^n _t
+		b_i <- Z^n _t
+		c_i = a_i x b_i
+	*/
+	a := NewRandomVec(n, T)
+	b := NewRandomVec(n, T)
+	bep.c = MulVec(&a, &b, T)
+
+	//convert to ring element
+	//JE CROIS
+	bep.a = ring.NewPoly(uint64(math.Pow(2, 13)), bep.params.Qi[0])
+	bep.a.SetCoefficients([][]uint64{a})
+	bep.b = ring.NewPoly(uint64(math.Pow(2, 13)), bep.params.Qi[0])
+	bep.b.SetCoefficients([][]uint64{b})
+
+	return bep
 }
 
-func Run() {
+//BeaverRun runs beaver prot
+func BeaverRun() {
 	return
 }
 
+//same as given
+/*
 func BindNetwork() {
 	return
 }
+*/

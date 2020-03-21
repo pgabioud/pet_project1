@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/ldsec/lattigo/ring"
+	"math/rand"
+	"time"
 )
 
 // NewRandomVec generates a new vector of n variable uniformly distributed in Z(T)
 func NewRandomVec(n, T uint64) []uint64 {
+	rand.Seed(time.Now().UTC().UnixNano())
 	var vector []uint64
 	for i := uint64(0); i < n; i++ {
-		vector = append(vector, ring.RandUniform(T, (2^37)-1))
+		vector = append(vector, uint64(rand.Int63n(int64(T))))
 	}
 	return vector
 }
@@ -27,7 +28,7 @@ func AddVec(a, b *[]uint64, T uint64) []uint64 {
 	return vector
 }
 
-// SubVec computes a+b modulo T with a,b vectors
+// SubVec computes a-b modulo T with a,b vectors
 func SubVec(a, b *[]uint64, T uint64) []uint64 {
 	if len(*a) != len(*b) {
 		fmt.Println("vectors should be of same size for the substraction")
@@ -39,7 +40,7 @@ func SubVec(a, b *[]uint64, T uint64) []uint64 {
 	return vector
 }
 
-// MulVec computes a+b modulo T with a,b vectors
+// MulVec computes a x b modulo T with a,b vectors
 func MulVec(a, b *[]uint64, T uint64) []uint64 {
 	if len(*a) != len(*b) {
 		fmt.Println("vectors should be of same size for the multiplication")
