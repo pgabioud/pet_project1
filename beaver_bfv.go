@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"math"
-
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/ldsec/lattigo/ring"
 )
@@ -70,16 +67,14 @@ func (lp *LocalParty) New() *BeaverProtocol {
 	bep.c = MulVec(&a, &b, T)
 
 	//convert to ring element
-	Q := uint64(math.Pow(2, 16) + 1)
 
 	bep.a = bep.params.NewPolyQ()
 	bep.a.SetCoefficients([][]uint64{a})
 	bep.b = bep.params.NewPolyQ()
 	bep.b.SetCoefficients([][]uint64{b})
-	fmt.Printf("initialization done with n being %d, T being %d and Q is %d \n", n, T, Q)
 
 	//sk <- xi_(1/3)
-	context, err := ring.NewContextWithParams(n, []uint64{Q})
+	context, err := ring.NewContextWithParams(n, bep.params.Qi)
 	check(err)
 	bep.sk = context.SampleTernaryNew(1.0 / 3.0)
 
@@ -87,14 +82,13 @@ func (lp *LocalParty) New() *BeaverProtocol {
 }
 
 //BeaverRun runs beaver prot
-func BeaverRun() {
+func (bep *BeaverProtocol) BeaverRun() {
 
 	/*
 		di = Enc_sk_i (a_i) in R^2
 		foreach other party j
 		send di to j
 	*/
-
 	/*   foreach other party j do
 	receive dj from j
 	r_ij <- Z^n _t
