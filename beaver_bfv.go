@@ -1,7 +1,7 @@
 package main
 
 import (
-	"math"
+	"fmt"
 
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/ldsec/lattigo/ring"
@@ -42,7 +42,7 @@ type BeaverInputs struct {
 }
 
 //New beaver protocol, creates the protocol
-func (lp *LocalParty) New(n uint64, T uint64) *BeaverProtocol {
+func (lp *LocalParty) New() *BeaverProtocol {
 
 	bep := new(BeaverProtocol)
 	bep.LocalParty = lp
@@ -62,18 +62,25 @@ func (lp *LocalParty) New(n uint64, T uint64) *BeaverProtocol {
 		b_i <- Z^n _t
 		c_i = a_i x b_i
 	*/
+	n := uint64(1 << bep.params.LogN)
+	T := bep.params.T
 	a := NewRandomVec(n, T)
 	b := NewRandomVec(n, T)
 	bep.c = MulVec(&a, &b, T)
 
 	//convert to ring element
 	//JE CROIS
-	bep.a = ring.NewPoly(uint64(math.Pow(2, 13)), bep.params.Qi[0])
+	Q := uint64(bep.params.LogQP())
+	bep.a = ring.NewPoly(n, Q)
 	bep.a.SetCoefficients([][]uint64{a})
-	bep.b = ring.NewPoly(uint64(math.Pow(2, 13)), bep.params.Qi[0])
-	bep.b.SetCoefficients([][]uint64{b})
-
+	bep.b = ring.NewPoly(n, Q)
+	fmt.Println(bep.b.GetDegree())
+	fmt.Printf("initialization done with n being %d, T being %d and Q is %d \n", n, T, Q)
 	//sk <- xi_(1/3)
+	context := ring.NewContext()
+	fmt.Println(1.0 / 3.0)
+	sk := context.SampleTernaryNew(1.0 / 3.0)
+	fmt.Println("sk is sampled ", sk)
 	return bep
 }
 

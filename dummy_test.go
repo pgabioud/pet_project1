@@ -237,3 +237,16 @@ func TestVectorOperations(t *testing.T) {
 	})
 
 }
+
+func TestBVF(t *testing.T) {
+	t.Run("New", func(t *testing.T) {
+		peers := TestCircuits[7].Peers
+		lp, err := NewLocalParty(1, peers)
+		check(err)
+
+		// Create the network for the circuit
+
+		beaver := lp.New()
+		fmt.Println(beaver)
+	})
+}
