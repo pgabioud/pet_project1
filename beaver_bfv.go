@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/ldsec/lattigo/ring"
@@ -18,7 +19,7 @@ type BeaverProtocol struct {
 	a      *ring.Poly
 	b      *ring.Poly
 	params *bfv.Parameters
-	sk     uint64
+	sk     *ring.Poly
 }
 
 //!!!same as remoteParty!!!
@@ -69,18 +70,19 @@ func (lp *LocalParty) New() *BeaverProtocol {
 	bep.c = MulVec(&a, &b, T)
 
 	//convert to ring element
-	//JE CROIS
-	Q := uint64(bep.params.LogQP())
-	bep.a = ring.NewPoly(n, Q)
+	Q := uint64(math.Pow(2, 16) + 1)
+
+	bep.a = bep.params.NewPolyQ()
 	bep.a.SetCoefficients([][]uint64{a})
-	bep.b = ring.NewPoly(n, Q)
-	fmt.Println(bep.b.GetDegree())
+	bep.b = bep.params.NewPolyQ()
+	bep.b.SetCoefficients([][]uint64{b})
 	fmt.Printf("initialization done with n being %d, T being %d and Q is %d \n", n, T, Q)
+
 	//sk <- xi_(1/3)
-	context := ring.NewContext()
-	fmt.Println(1.0 / 3.0)
-	sk := context.SampleTernaryNew(1.0 / 3.0)
-	fmt.Println("sk is sampled ", sk)
+	context, err := ring.NewContextWithParams(n, []uint64{Q})
+	check(err)
+	bep.sk = context.SampleTernaryNew(1.0 / 3.0)
+
 	return bep
 }
 
