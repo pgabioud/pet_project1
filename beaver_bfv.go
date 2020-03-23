@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/ldsec/lattigo/ring"
 )
@@ -12,11 +14,12 @@ type BeaverProtocol struct {
 	Peers map[PartyID]*Remote
 
 	c []uint64
+	n uint64
 	//elements in ring
 	a      *ring.Poly
 	b      *ring.Poly
 	params *bfv.Parameters
-	sk     *ring.Poly
+	sk     *bfv.SecretKey
 }
 
 //!!!same as remoteParty!!!
@@ -30,7 +33,7 @@ type BeaverRemoteParty struct {
 //BeaverMessage the value in message passed is a ring element
 type BeaverMessage struct {
 	Party PartyID
-	d     ring.Poly
+	d     *bfv.Ciphertext
 }
 
 //BeaverInputs are the BFV scheme parameters
@@ -60,10 +63,10 @@ func (lp *LocalParty) New() *BeaverProtocol {
 		b_i <- Z^n _t
 		c_i = a_i x b_i
 	*/
-	n := uint64(1 << bep.params.LogN)
+	bep.n = uint64(1 << bep.params.LogN)
 	T := bep.params.T
-	a := NewRandomVec(n, T)
-	b := NewRandomVec(n, T)
+	a := NewRandomVec(bep.n, T)
+	b := NewRandomVec(bep.n, T)
 	bep.c = MulVec(&a, &b, T)
 
 	//convert to ring element
@@ -73,10 +76,10 @@ func (lp *LocalParty) New() *BeaverProtocol {
 	bep.b = bep.params.NewPolyQ()
 	bep.b.SetCoefficients([][]uint64{b})
 
-	//sk <- xi_(1/3)
-	context, err := ring.NewContextWithParams(n, bep.params.Qi)
-	check(err)
-	bep.sk = context.SampleTernaryNew(1.0 / 3.0)
+	//prepare encryption
+
+	kgen := bfv.NewKeyGenerator(bep.params)
+	bep.sk, _ = kgen.GenKeyPair()
 
 	return bep
 }
@@ -84,11 +87,32 @@ func (lp *LocalParty) New() *BeaverProtocol {
 //BeaverRun runs beaver prot
 func (bep *BeaverProtocol) BeaverRun() {
 
-	/*
-		di = Enc_sk_i (a_i) in R^2
-		foreach other party j
-		send di to j
-	*/
+	encryptorSk := bfv.NewEncryptorFromSk(bep.params, bep.sk)
+	encoder := bfv.NewEncoder(bep.params)
+	plaintext := bfv.NewPlaintext(bep.params)
+	encoder.EncodeUint(bep.a.Coeffs[0], plaintext)
+
+	cyphertext := encryptorSk.EncryptNew(plaintext)
+
+	for _, peer := range bep.Peers {
+		if peer.ID != bep.ID {
+			peer.Chan <- Message{bep.ID, cyphertext}
+		}
+	}
+
+	received := make(map[PartyID]uint64)
+	for m := range bep.Chan {
+		received[m.Party] = m.Value
+		if len(received) == len(bep.Peers)-1 {
+			fmt.Println(bep, "received is ", received)
+		}
+		r := NewRandomVec(bep.n, bep.params.T)
+		cyphertext = SubVec(cyphertext, &r)
+		encR := bep.params.NewPolyQ()
+		encR.SetCoefficients([][]uint64{r})
+
+	}
+
 	/*   foreach other party j do
 	receive dj from j
 	r_ij <- Z^n _t
