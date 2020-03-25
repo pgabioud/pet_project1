@@ -1,39 +1,38 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
+	"net"
 
 	"github.com/ldsec/lattigo/bfv"
-	"github.com/ldsec/lattigo/ring"
 )
 
 //BeaverProtocol stores all data that is reused between 2 runs
 type BeaverProtocol struct {
 	*LocalParty
-	Chan  chan Message
-	Peers map[PartyID]*Remote
+	Chan  chan BeaverMessage
+	Peers map[PartyID]*BeaverRemoteParty
 
 	c []uint64
 	n uint64
 	//elements in ring
-	a      *ring.Poly
-	b      *ring.Poly
+	a      *bfv.Plaintext
+	b      *bfv.Plaintext
 	params *bfv.Parameters
 	sk     *bfv.SecretKey
 }
 
-//!!!same as remoteParty!!!
-/*
+//BeaverRemoteParty sends beaver Messages (ciphertexts) over chans
 type BeaverRemoteParty struct {
 	*RemoteParty
-	Chan chan Message
+	Chan chan BeaverMessage
 }
-*/
 
 //BeaverMessage the value in message passed is a ring element
 type BeaverMessage struct {
 	Party PartyID
-	d     *bfv.Ciphertext
+	d     bfv.Ciphertext
 }
 
 //BeaverInputs are the BFV scheme parameters
@@ -47,13 +46,13 @@ func (lp *LocalParty) New() *BeaverProtocol {
 
 	bep := new(BeaverProtocol)
 	bep.LocalParty = lp
-	bep.Chan = make(chan Message, 32)
-	bep.Peers = make(map[PartyID]*Remote, len(lp.Peers))
+	bep.Chan = make(chan BeaverMessage, 32)
+	bep.Peers = make(map[PartyID]*BeaverRemoteParty, len(lp.Peers))
 
-	for i, rp := range lp.Peers {
-		bep.Peers[i] = &Remote{
-			RemoteParty: rp,
-			Chan:        make(chan Message, 32),
+	for i, brp := range lp.Peers {
+		bep.Peers[i] = &BeaverRemoteParty{
+			RemoteParty: brp,
+			Chan:        make(chan BeaverMessage, 32),
 		}
 	}
 
@@ -71,11 +70,15 @@ func (lp *LocalParty) New() *BeaverProtocol {
 
 	//convert to ring element
 
-	bep.a = bep.params.NewPolyQ()
-	bep.a.SetCoefficients([][]uint64{a})
-	bep.b = bep.params.NewPolyQ()
-	bep.b.SetCoefficients([][]uint64{b})
+	//bep.b = bep.params.NewPolyQ()
+	//bep.b.SetCoefficients([][]uint64{b})
+	encoder := bfv.NewEncoder(bep.params)
 
+	bep.a = bfv.NewPlaintext(bep.params)
+	bep.b = bfv.NewPlaintext(bep.params)
+
+	encoder.EncodeUint(a, bep.a)
+	encoder.EncodeUint(b, bep.b)
 	//prepare encryption
 
 	kgen := bfv.NewKeyGenerator(bep.params)
@@ -87,32 +90,21 @@ func (lp *LocalParty) New() *BeaverProtocol {
 //BeaverRun runs beaver prot
 func (bep *BeaverProtocol) BeaverRun() {
 
+	evaluator := bfv.NewEvaluator(bep.params)
 	encryptorSk := bfv.NewEncryptorFromSk(bep.params, bep.sk)
 	encoder := bfv.NewEncoder(bep.params)
 	plaintext := bfv.NewPlaintext(bep.params)
-	encoder.EncodeUint(bep.a.Coeffs[0], plaintext)
+	//encoder.EncodeUint(bep.a.Coeffs[0], plaintext)
 
-	cyphertext := encryptorSk.EncryptNew(plaintext)
-
+	ciphertext := encryptorSk.EncryptNew(bep.a)
+	fmt.Println("made cipher")
 	for _, peer := range bep.Peers {
 		if peer.ID != bep.ID {
-			peer.Chan <- Message{bep.ID, cyphertext}
+			peer.Chan <- BeaverMessage{bep.ID, *ciphertext}
 		}
 	}
-
-	received := make(map[PartyID]uint64)
-	for m := range bep.Chan {
-		received[m.Party] = m.Value
-		if len(received) == len(bep.Peers)-1 {
-			fmt.Println(bep, "received is ", received)
-		}
-		r := NewRandomVec(bep.n, bep.params.T)
-		cyphertext = SubVec(cyphertext, &r)
-		encR := bep.params.NewPolyQ()
-		encR.SetCoefficients([][]uint64{r})
-
-	}
-
+	fmt.Println("sent all cipher")
+	received := make(map[PartyID]bfv.Ciphertext)
 	/*   foreach other party j do
 	receive dj from j
 	r_ij <- Z^n _t
@@ -120,9 +112,26 @@ func (bep *BeaverProtocol) BeaverRun() {
 	encode r_ ij = to ring R
 	(e^0_ij, e^ij) <- xi _err in R^2
 	d_ij = Add(Mul(d_j, bi), r_ij) + (e^o _ij, e^ _ij)
-	send d_ij to Pj
+	send d_ij to Pj back
 
 	*/
+	for m := range bep.Chan {
+		received[m.Party] = m.d
+		if len(received) == len(bep.Peers)-1 {
+			fmt.Println(bep, "received is ", received)
+		}
+		r := NewRandomVec(bep.n, bep.params.T)
+		bep.c = SubVec(&bep.c, &r, bep.params.T)
+		//encR := bep.params.NewPolyQ()
+		//encR.SetCoefficients([][]uint64{r})
+		encoder.EncodeUint(r, plaintext)
+		evaluator.Mul(&m.d, bep.b, &m.d)
+		evaluator.Add(&m.d, plaintext, &m.d) //how do we add noise?
+
+		//have to send back to same guy
+		bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, m.d}
+	}
+
 	//each Party i does
 	/*
 		c' = (0,0) in R^2
@@ -137,9 +146,45 @@ func (bep *BeaverProtocol) BeaverRun() {
 	return
 }
 
-//!!!same as given!!!
-/*
-func BindNetwork() {
-	return
+//BeaverBindNetwork need to send BeaverMessage, not Message
+func (bep *BeaverProtocol) BeaverBindNetwork(nw *TCPNetworkStruct) {
+	for partyID, conn := range nw.Conns {
+
+		if partyID == bep.ID {
+			continue
+		}
+
+		brp := bep.Peers[partyID]
+
+		// Receiving loop from remote
+		go func(conn net.Conn, brp *BeaverRemoteParty) {
+			for {
+				var id uint64
+				var cipher bfv.Ciphertext
+				var err error
+				err = binary.Read(conn, binary.BigEndian, &id)
+				check(err)
+				err = binary.Read(conn, binary.BigEndian, &cipher)
+				check(err)
+				msg := BeaverMessage{
+					Party: PartyID(id),
+					d:     cipher,
+				}
+				//fmt.Println(cep, "receiving", msg, "from", rp)
+				bep.Chan <- msg
+			}
+		}(conn, brp)
+
+		// Sending loop of remote
+		go func(conn net.Conn, brp *BeaverRemoteParty) {
+			var m BeaverMessage
+			var open = true
+			for open {
+				m, open = <-brp.Chan
+				//fmt.Println(cep, "sending", m, "to", rp)
+				check(binary.Write(conn, binary.BigEndian, m.Party))
+				check(binary.Write(conn, binary.BigEndian, m.d))
+			}
+		}(conn, brp)
+	}
 }
-*/

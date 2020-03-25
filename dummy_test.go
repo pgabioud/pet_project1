@@ -247,6 +247,8 @@ func TestBVF(t *testing.T) {
 		// Create the network for the circuit
 
 		beaver := lp.New()
-		fmt.Println(beaver)
+		fmt.Println("beaver created")
+		beaver.BeaverRun()
 	})
+
 }
