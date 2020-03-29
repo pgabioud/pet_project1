@@ -34,7 +34,7 @@ type BeaverRemoteParty struct {
 //BeaverMessage the value in message passed is a ring element
 type BeaverMessage struct {
 	Party PartyID
-	d     bfv.Ciphertext
+	d     []byte
 	typeM uint8
 }
 
@@ -102,14 +102,17 @@ func (bep *BeaverProtocol) BeaverRun() {
 
 	ciphertext := encryptorSk.EncryptNew(bep.a)
 	fmt.Println("made cipher")
+
+	msg, err := ciphertext.MarshalBinary()
+	check(err)
 	for _, peer := range bep.Peers {
 		if peer.ID != bep.ID {
-			peer.Chan <- BeaverMessage{bep.ID, *ciphertext, 0}
+			peer.Chan <- BeaverMessage{bep.ID, msg, 0}
 		}
 	}
 
 	fmt.Println("sent all cipher")
-	received := make(map[PartyID]bfv.Ciphertext)
+	received := make(map[PartyID]*bfv.Ciphertext)
 	/*   foreach other party j do
 	receive dj from j
 	r_ij <- Z^n _t
@@ -130,8 +133,12 @@ func (bep *BeaverProtocol) BeaverRun() {
 	cipherCPrime := encryptorSk.EncryptNew(plainCPrime)
 
 	for m := range bep.Chan {
+		d := bfv.NewCiphertext(bep.params, (1 << bep.params.LogN))
+		err := d.UnmarshalBinary(m.d)
+		check(err)
 		if m.typeM == 0 {
-			received[m.Party] = m.d
+
+			received[m.Party] = d
 			if len(received) == len(bep.Peers)-1 {
 				fmt.Println(bep, "received is ", received)
 			}
@@ -148,13 +155,14 @@ func (bep *BeaverProtocol) BeaverRun() {
 			//encoder.EncodeUint(e0, e1, plaintext)
 			encoder.EncodeUint(r, plaintext)
 
-			evaluator.Mul(&m.d, bep.b, &m.d)
-			evaluator.Add(&m.d, plaintext, &m.d) //how do we add noise?
-			evaluator.Add(&m.d, gaussian, &m.d)
+			evaluator.Mul(d, bep.b, d)
+			evaluator.Add(d, plaintext, d) //how do we add noise?
+			evaluator.Add(d, gaussian, d)
 			//have to send back to same guy
 			bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, m.d, 1}
 		} else {
-			evaluator.Add(cipherCPrime, &m.d, cipherCPrime)
+
+			evaluator.Add(cipherCPrime, d, cipherCPrime)
 		}
 	}
 
@@ -190,7 +198,7 @@ func (bep *BeaverProtocol) BeaverBindNetwork(nw *TCPNetworkStruct) {
 		go func(conn net.Conn, brp *BeaverRemoteParty) {
 			for {
 				var id uint64
-				var cipher bfv.Ciphertext
+				var cipher []byte
 				var err error
 				err = binary.Read(conn, binary.BigEndian, &id)
 				check(err)
