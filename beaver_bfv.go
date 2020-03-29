@@ -35,6 +35,7 @@ type BeaverRemoteParty struct {
 type BeaverMessage struct {
 	Party PartyID
 	d     bfv.Ciphertext
+	typeM uint8
 }
 
 //BeaverInputs are the BFV scheme parameters
@@ -95,6 +96,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 	evaluator := bfv.NewEvaluator(bep.params)
 	encryptorSk := bfv.NewEncryptorFromSk(bep.params, bep.sk)
 	encoder := bfv.NewEncoder(bep.params)
+	decryptorSk := bfv.NewDecryptor(bep.params, bep.sk)
 
 	//encoder.EncodeUint(bep.a.Coeffs[0], plaintext)
 
@@ -102,7 +104,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 	fmt.Println("made cipher")
 	for _, peer := range bep.Peers {
 		if peer.ID != bep.ID {
-			peer.Chan <- BeaverMessage{bep.ID, *ciphertext}
+			peer.Chan <- BeaverMessage{bep.ID, *ciphertext, 0}
 		}
 	}
 
@@ -118,30 +120,47 @@ func (bep *BeaverProtocol) BeaverRun() {
 	send d_ij to Pj back
 
 	*/
-	for m := range bep.Chan {
-		received[m.Party] = m.d
-		if len(received) == len(bep.Peers)-1 {
-			fmt.Println(bep, "received is ", received)
-		}
-		r := NewRandomVec(bep.n, bep.params.T)
-		bep.c = SubVec(&bep.c, &r, bep.params.T)
-		//encR := bep.params.NewPolyQ()
-		//encR.SetCoefficients([][]uint64{r})
-		plaintext := bfv.NewPlaintext(bep.params)
-
-		context, _ := ring.NewContextWithParams(bep.n, bep.params.Qi)
-		e0 := context.SampleGaussianNew(bep.params.Sigma, uint64(math.Floor(6.0*bep.params.Sigma)))
-		gaussian := bfv.NewPlaintext(bep.params)
-		encoder.EncodeUint(e0.Coeffs[0], gaussian)
-		//encoder.EncodeUint(e0, e1, plaintext)
-		encoder.EncodeUint(r, plaintext)
-
-		evaluator.Mul(&m.d, bep.b, &m.d)
-		evaluator.Add(&m.d, plaintext, &m.d) //how do we add noise?
-		evaluator.Add(&m.d, gaussian, &m.d)
-		//have to send back to same guy
-		bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, m.d}
+	var cPrime []uint64
+	for i := uint64(0); i < bep.n; i++ {
+		cPrime = append(cPrime, uint64(0))
 	}
+
+	plainCPrime := bfv.NewPlaintext(bep.params)
+	encoder.EncodeUint(cPrime, plainCPrime)
+	cipherCPrime := encryptorSk.EncryptNew(plainCPrime)
+
+	for m := range bep.Chan {
+		if m.typeM == 0 {
+			received[m.Party] = m.d
+			if len(received) == len(bep.Peers)-1 {
+				fmt.Println(bep, "received is ", received)
+			}
+			r := NewRandomVec(bep.n, bep.params.T)
+			bep.c = SubVec(&bep.c, &r, bep.params.T)
+			//encR := bep.params.NewPolyQ()
+			//encR.SetCoefficients([][]uint64{r})
+			plaintext := bfv.NewPlaintext(bep.params)
+
+			context, _ := ring.NewContextWithParams(bep.n, bep.params.Qi)
+			e0 := context.SampleGaussianNew(bep.params.Sigma, uint64(math.Floor(6.0*bep.params.Sigma)))
+			gaussian := bfv.NewPlaintext(bep.params)
+			encoder.EncodeUint(e0.Coeffs[0], gaussian)
+			//encoder.EncodeUint(e0, e1, plaintext)
+			encoder.EncodeUint(r, plaintext)
+
+			evaluator.Mul(&m.d, bep.b, &m.d)
+			evaluator.Add(&m.d, plaintext, &m.d) //how do we add noise?
+			evaluator.Add(&m.d, gaussian, &m.d)
+			//have to send back to same guy
+			bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, m.d, 1}
+		} else {
+			evaluator.Add(cipherCPrime, &m.d, cipherCPrime)
+		}
+	}
+
+	decryptCipher := decryptorSk.DecryptNew(cipherCPrime)
+	decodedCypher := encoder.DecodeUint(decryptCipher)
+	bep.c = AddVec(&bep.c, &decodedCypher, bep.params.T)
 
 	//each Party i does
 	/*
