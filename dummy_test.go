@@ -5,6 +5,8 @@ import (
 	"math"
 	"sync"
 	"testing"
+
+	"github.com/ldsec/lattigo/bfv"
 )
 
 func TestProtocol(t *testing.T) {
@@ -240,6 +242,8 @@ func TestVectorOperations(t *testing.T) {
 
 func TestBVF(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
+
+		var modulus uint64 = 65537
 		peers := TestCircuits[7].Peers
 
 		// Create the network for the circuit
@@ -267,9 +271,29 @@ func TestBVF(t *testing.T) {
 		for _, p := range dummyProtocol {
 			p.Add(1)
 			go p.BeaverRun()
-		}
-		wg.Wait()
 
+		}
+
+		wg.Wait()
+		for i := 0; i < 20; i++ {
+			var resulta uint64 = 0
+			var resultb uint64 = 0
+			var resultc uint64 = 0
+			for _, p := range dummyProtocol {
+				resultc += p.c[i]
+				encoder := bfv.NewEncoder(p.params)
+				resulta += encoder.DecodeUint(p.a)[i]
+				resultb += encoder.DecodeUint(p.b)[i]
+			}
+
+			res1 := mod(int64(resulta*resultb), int64(modulus))
+			res2 := mod(int64(resultc), int64(modulus))
+			if res1 != res2 {
+				t.Error("wrong, youre fake news")
+			}
+		}
+
+		wg.Wait()
 		fmt.Println("test completed")
 	})
 
