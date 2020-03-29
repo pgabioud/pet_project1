@@ -93,7 +93,7 @@ func (cep *Protocol) BindNetwork(nw *TCPNetworkStruct) {
 					Party: PartyID(id),
 					Value: val,
 				}
-				//fmt.Println(cep, "receiving", msg, "from", rp)
+				fmt.Println(cep, "receiving", msg, "from", rp)
 				cep.Chan <- msg
 			}
 		}(conn, rp)
