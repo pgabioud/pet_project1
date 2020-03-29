@@ -241,14 +241,36 @@ func TestVectorOperations(t *testing.T) {
 func TestBVF(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
 		peers := TestCircuits[7].Peers
-		lp, err := NewLocalParty(1, peers)
-		check(err)
 
 		// Create the network for the circuit
 
-		beaver := lp.New()
-		fmt.Println("beaver created")
-		beaver.BeaverRun()
+		N := uint64(len(peers))
+		P := make([]*LocalParty, N, N)
+		dummyProtocol := make([]*BeaverProtocol, N, N)
+		wg := new(sync.WaitGroup)
+
+		for i := range peers {
+			P[i], _ = NewLocalParty(i, peers)
+			P[i].WaitGroup = wg
+
+			dummyProtocol[i] = P[i].New()
+
+		}
+
+		network := GetTestingTCPNetwork(P)
+		fmt.Println("parties connected")
+
+		for i, Pi := range dummyProtocol {
+			Pi.BeaverBindNetwork(network[i])
+		}
+
+		for _, p := range dummyProtocol {
+			p.Add(1)
+			go p.BeaverRun()
+		}
+		wg.Wait()
+
+		fmt.Println("test completed")
 	})
 
 }
