@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 	"net"
 
 	"github.com/ldsec/lattigo/bfv"
+	"github.com/ldsec/lattigo/ring"
 )
 
 //BeaverProtocol stores all data that is reused between 2 runs
@@ -93,7 +95,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 	evaluator := bfv.NewEvaluator(bep.params)
 	encryptorSk := bfv.NewEncryptorFromSk(bep.params, bep.sk)
 	encoder := bfv.NewEncoder(bep.params)
-	plaintext := bfv.NewPlaintext(bep.params)
+
 	//encoder.EncodeUint(bep.a.Coeffs[0], plaintext)
 
 	ciphertext := encryptorSk.EncryptNew(bep.a)
@@ -103,6 +105,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 			peer.Chan <- BeaverMessage{bep.ID, *ciphertext}
 		}
 	}
+
 	fmt.Println("sent all cipher")
 	received := make(map[PartyID]bfv.Ciphertext)
 	/*   foreach other party j do
@@ -124,10 +127,18 @@ func (bep *BeaverProtocol) BeaverRun() {
 		bep.c = SubVec(&bep.c, &r, bep.params.T)
 		//encR := bep.params.NewPolyQ()
 		//encR.SetCoefficients([][]uint64{r})
+		plaintext := bfv.NewPlaintext(bep.params)
+
+		context, _ := ring.NewContextWithParams(bep.n, bep.params.Qi)
+		e0 := context.SampleGaussianNew(bep.params.Sigma, uint64(math.Floor(6.0*bep.params.Sigma)))
+		gaussian := bfv.NewPlaintext(bep.params)
+		encoder.EncodeUint(e0.Coeffs[0], gaussian)
+		//encoder.EncodeUint(e0, e1, plaintext)
 		encoder.EncodeUint(r, plaintext)
+
 		evaluator.Mul(&m.d, bep.b, &m.d)
 		evaluator.Add(&m.d, plaintext, &m.d) //how do we add noise?
-
+		evaluator.Add(&m.d, gaussian, &m.d)
 		//have to send back to same guy
 		bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, m.d}
 	}
