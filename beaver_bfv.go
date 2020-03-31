@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"time"
 
 	"github.com/ldsec/lattigo/bfv"
 	"github.com/ldsec/lattigo/ring"
@@ -17,11 +16,11 @@ type BeaverProtocol struct {
 	Chan  chan BeaverMessage
 	Peers map[PartyID]*BeaverRemoteParty
 
-	c []uint64
 	n uint64
 	//elements in ring
-	a      *bfv.Plaintext
-	b      *bfv.Plaintext
+	a      []uint64
+	b      []uint64
+	c      []uint64
 	params *bfv.Parameters
 	sk     *bfv.SecretKey
 	pk     *bfv.PublicKey
@@ -71,22 +70,11 @@ func (lp *LocalParty) New() *BeaverProtocol {
 	bep.n = uint64(1 << bep.params.LogN)
 	T := bep.params.T
 
-	a := NewRandomVec(bep.n, T)
-	b := NewRandomVec(bep.n, T)
-	fmt.Println("party ", bep.ID, "made a = ", a[:3], " and b = ", b[:3])
-	bep.c = MulVec(&a, &b, T)
+	bep.a = NewRandomVec(bep.n, T)
+	bep.b = NewRandomVec(bep.n, T)
+	fmt.Println("party ", bep.ID, "made a = ", bep.a[:3], " and b = ", bep.b[:3])
+	bep.c = MulVec(&bep.a, &bep.b, T)
 
-	//convert to ring element
-
-	//bep.b = bep.params.NewPolyQ()
-	//bep.b.SetCoefficients([][]uint64{b})
-	encoder := bfv.NewEncoder(bep.params)
-
-	bep.a = bfv.NewPlaintext(bep.params)
-	bep.b = bfv.NewPlaintext(bep.params)
-
-	encoder.EncodeUint(a, bep.a)
-	encoder.EncodeUint(b, bep.b)
 	//prepare encryption
 
 	kgen := bfv.NewKeyGenerator(bep.params)
@@ -103,83 +91,68 @@ func (bep *BeaverProtocol) BeaverRun() {
 	encoder := bfv.NewEncoder(bep.params)
 	decryptorSk := bfv.NewDecryptor(bep.params, bep.sk)
 
-	//encoder.EncodeUint(bep.a.Coeffs[0], plaintext)
+	//convert to ring element
+	plainA := bfv.NewPlaintext(bep.params)
+	plainB := bfv.NewPlaintext(bep.params)
 
-	ciphertext := encryptorPk.EncryptNew(bep.a)
+	encoder.EncodeUint(bep.a, plainA)
+	encoder.EncodeUint(bep.b, plainB)
 
-	msg, err := ciphertext.MarshalBinary()
+	cipherA := encryptorPk.EncryptNew(plainA)
+
+	msg, err := cipherA.MarshalBinary()
 	check(err)
+
 	for _, peer := range bep.Peers {
 		if peer.ID != bep.ID {
-			time.Sleep(100 * time.Millisecond)
 			peer.Chan <- BeaverMessage{bep.ID, uint64(len(msg)), msg, 0}
 		}
 	}
-
 	//fmt.Println("sent all cipher")
+
 	received := make(map[PartyID]*bfv.Ciphertext)
-	/*   foreach other party j do
-	receive dj from j
-	r_ij <- Z^n _t
-	c_i = c_i - r_ij
-	encode r_ ij = to ring R
-	(e^0_ij, e^ij) <- xi _err in R^2
-	d_ij = Add(Mul(d_j, bi), r_ij) + (e^o _ij, e^ _ij)
-	send d_ij to Pj back
-
-	*/
-	var cPrime []uint64
-	for i := uint64(0); i < bep.n; i++ {
-		cPrime = append(cPrime, uint64(0))
-	}
-
-	plainCPrime := bfv.NewPlaintext(bep.params)
-	encoder.EncodeUint(cPrime, plainCPrime)
-	cipherCPrime := encryptorPk.EncryptNew(plainCPrime)
+	var cipherCPrime bfv.Ciphertext
 	counter := 0
 
 	for m := range bep.Chan {
 		//fmt.Println("party", bep.ID, " channel length is ", len(bep.Chan))
 		//fmt.Println("type of m = ", m.TypeM)
 		d := bfv.NewCiphertext(bep.params, 1)
-		//fmt.Println(d.Degree())
 		err := d.UnmarshalBinary(m.Marshal)
 		check(err)
+
 		if m.TypeM == 0 {
 			received[m.Party] = d
-			//fmt.Println("len of received = ", len(received))
-			if len(received) == len(bep.Peers)-1 {
-				//fmt.Println(bep, "received is ", received)
-			}
 			r := NewRandomVec(bep.n, bep.params.T)
 			bep.c = SubVec(&bep.c, &r, bep.params.T)
-			//encR := bep.params.NewPolyQ()
-			//encR.SetCoefficients([][]uint64{r})
-			plaintext := bfv.NewPlaintext(bep.params)
+
+			plainR := bfv.NewPlaintext(bep.params)
 
 			context, _ := ring.NewContextWithParams(bep.n, bep.params.Qi)
 			e0 := context.SampleGaussianNew(bep.params.Sigma, uint64(math.Floor(6.0*bep.params.Sigma)))
 			e1 := context.SampleGaussianNew(bep.params.Sigma, uint64(math.Floor(6.0*bep.params.Sigma)))
 			gaussian := bfv.NewCiphertext(bep.params, 1)
 			gaussian.SetValue([]*ring.Poly{e0, e1})
-			//encoder.EncodeUint(e0, e1, plaintext)
-			encoder.EncodeUint(r, plaintext)
+			encoder.EncodeUint(r, plainR)
 
-			evaluator.Mul(d, bep.b, d)
-
-			evaluator.Add(d, plaintext, d) //how do we add noise?
+			evaluator.Mul(d, plainB, d)
+			evaluator.Add(d, plainR, d)
 			evaluator.Add(d, gaussian, d)
-			fmt.Println("degrees: (d, b, r, gauss", d.Degree(), bep.b.Degree(), plaintext.Degree(), gaussian.Degree())
-			//have to send back to same party
+			fmt.Println("degrees: (d, b, r, gauss)", d.Degree(), plainB.Degree(), plainR.Degree(), gaussian.Degree())
+
+			//sent back to same party
 			msg, err := d.MarshalBinary()
 			check(err)
-			//time.Sleep(100 * time.Millisecond)
+
 			//fmt.Println("my party is ", bep.Party, "sending response to ", m.Party)
 			bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, uint64(len(msg)), msg, 1}
 		} else {
+			if counter == 0 {
+				cipherCPrime = *d
+			} else {
+				evaluator.Add(cipherCPrime, d, &cipherCPrime)
+			}
 			counter++
-			evaluator.Add(cipherCPrime, d, cipherCPrime)
-			//fmt.Println(bep.ID, " counter is ", counter)
 			if counter == len(bep.Peers)-1 {
 				//fmt.Println("close")
 				close(bep.Chan)
@@ -187,22 +160,12 @@ func (bep *BeaverProtocol) BeaverRun() {
 		}
 	}
 
-	decryptCipher := decryptorSk.DecryptNew(cipherCPrime)
+	decryptCipher := decryptorSk.DecryptNew(&cipherCPrime)
 	decodedCypher := encoder.DecodeUint(decryptCipher)
 	bep.c = AddVec(&bep.c, &decodedCypher, bep.params.T)
 
 	fmt.Println("party ", bep.ID, "managed to make c equal to ", bep.c[:3])
-	//each Party i does
-	/*
-		c' = (0,0) in R^2
-		foreach other party j
-			d _ji receive from j
-			c' = add(c', d_ij)
 
-		c' = Dec_sk(c')
-		decode from R c'
-		c_i = c_i + c'
-	*/
 	if bep.WaitGroup != nil {
 		bep.WaitGroup.Done()
 	}

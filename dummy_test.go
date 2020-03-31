@@ -5,8 +5,6 @@ import (
 	"math"
 	"sync"
 	"testing"
-
-	"github.com/ldsec/lattigo/bfv"
 )
 
 func TestProtocol(t *testing.T) {
@@ -281,9 +279,8 @@ func TestBVF(t *testing.T) {
 			var resultc uint64 = 0
 			for _, p := range dummyProtocol {
 				resultc += p.c[i]
-				encoder := bfv.NewEncoder(p.params)
-				resulta += encoder.DecodeUint(p.a)[i]
-				resultb += encoder.DecodeUint(p.b)[i]
+				resulta += p.a[i]
+				resultb += p.b[i]
 			}
 
 			res1 := mod(int64(resulta*resultb), int64(modulus))
