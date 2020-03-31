@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"encoding/binary"
 	"fmt"
@@ -35,8 +36,8 @@ type Protocol struct {
 	Chan  chan Message
 	Peers map[PartyID]*Remote
 
-	circuitID      CircuitID
-	beaverProtocol *BeaverProtocol
+	circuitID CircuitID
+	Beavers   [][3]uint64
 
 	Input  uint64
 	Output uint64
@@ -49,14 +50,14 @@ type Remote struct {
 }
 
 //NewProtocol initializes SMC for defined circuit with ID = circuitID
-func (lp *LocalParty) NewProtocol(input uint64, circuitID CircuitID, beaverProtocol *BeaverProtocol) *Protocol {
+func (lp *LocalParty) NewProtocol(input uint64, circuitID CircuitID, sharedBeavers *[][3]uint64) *Protocol {
 	cep := new(Protocol)
 	cep.LocalParty = lp
 	cep.circuitID = circuitID
 	cep.Chan = make(chan Message, 32)
 	cep.Peers = make(map[PartyID]*Remote, len(lp.Peers))
 
-	cep.beaverProtocol = beaverProtocol
+	cep.Beavers = (*sharedBeavers)
 
 	for i, rp := range lp.Peers {
 		cep.Peers[i] = &Remote{
@@ -154,3 +155,4 @@ func (cep *Protocol) Run() {
 		cep.WaitGroup.Done()
 	}
 }
+*/

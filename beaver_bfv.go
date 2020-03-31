@@ -46,8 +46,8 @@ type BeaverInputs struct {
 	s int64  //plaintext modulus
 }
 
-//New beaver protocol, creates the protocol
-func (lp *LocalParty) New() *BeaverProtocol {
+//NewBeaverProtocol beaver protocol, creates the protocol
+func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 
 	bep := new(BeaverProtocol)
 	bep.LocalParty = lp
@@ -85,6 +85,8 @@ func (lp *LocalParty) New() *BeaverProtocol {
 
 //BeaverRun runs beaver prot
 func (bep *BeaverProtocol) BeaverRun() {
+
+	//fmt.Println("beaver protocol running")
 
 	evaluator := bfv.NewEvaluator(bep.params)
 	encryptorPk := bfv.NewEncryptorFromPk(bep.params, bep.pk)
@@ -138,7 +140,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 			evaluator.Mul(d, plainB, d)
 			evaluator.Add(d, plainR, d)
 			evaluator.Add(d, gaussian, d)
-			fmt.Println("degrees: (d, b, r, gauss)", d.Degree(), plainB.Degree(), plainR.Degree(), gaussian.Degree())
+			//fmt.Println("degrees: (d, b, r, gauss)", d.Degree(), plainB.Degree(), plainR.Degree(), gaussian.Degree())
 
 			//sent back to same party
 			msg, err := d.MarshalBinary()
@@ -164,7 +166,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 	decodedCypher := encoder.DecodeUint(decryptCipher)
 	bep.c = AddVec(&bep.c, &decodedCypher, bep.params.T)
 
-	fmt.Println("party ", bep.ID, "managed to make c equal to ", bep.c[:3])
+	//fmt.Println("party ", bep.ID, "managed to make c equal to ", bep.c[:3])
 
 	if bep.WaitGroup != nil {
 		bep.WaitGroup.Done()
@@ -223,6 +225,7 @@ func (bep *BeaverProtocol) BeaverBindNetwork(nw *TCPNetworkStruct) {
 				check(binary.Write(conn, binary.BigEndian, m.Marshal))
 				check(binary.Write(conn, binary.BigEndian, m.TypeM))
 			}
+			//fmt.Println(bep, "writing", m.Party, len(m.Marshal), m.TypeM, "from", brp)
 		}(conn, brp)
 	}
 }

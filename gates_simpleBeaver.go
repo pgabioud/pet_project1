@@ -1,5 +1,6 @@
 package main
 
+/*
 import "fmt"
 
 //Evaluate evaluates different gates for cep using circuitID and shares in modulus ring s
@@ -33,24 +34,21 @@ func Evaluate(cep *Protocol, secrets *map[PartyID]uint64, s int64) {
 
 		case *Mult:
 			//1. compute (x-a)
-			cep.Output = mod(int64(wire[op.(*Mult).In1])-int64(cep.beaverProtocol.a[0]), s)
+			cep.Output = mod(int64(wire[op.(*Mult).In1])-int64(cep.Beavers[0][0]), s)
 			Revealgate(cep, s)
 			xa := cep.Output
 			//2. compute (y-b)
-			cep.Output = mod(int64(wire[op.(*Mult).In2])-int64(cep.beaverProtocol.b[0]), s)
+			cep.Output = mod(int64(wire[op.(*Mult).In2])-int64(cep.Beavers[0][1]), s)
 			Revealgate(cep, s)
 			yb := cep.Output
 			//3. comp z = c + x*(y-b) + y*(x-a) - (x-a)*(y-b)
-			z := mod(int64(cep.beaverProtocol.c[0])+int64(wire[op.(*Mult).In1]*yb)+int64(wire[op.(*Mult).In2]*xa), s)
+			z := mod(int64(cep.Beavers[0][2])+int64(wire[op.(*Mult).In1]*yb)+int64(wire[op.(*Mult).In2]*xa), s)
 			if cep.ID == 0 {
 				z = mod(int64(z)-int64(xa*yb), s)
 			}
 			wire[op.Output()] = z
-
 			//remove beaver used beaver triplet
-			cep.beaverProtocol.a = cep.beaverProtocol.a[:1]
-			cep.beaverProtocol.b = cep.beaverProtocol.b[:1]
-			cep.beaverProtocol.c = cep.beaverProtocol.c[:1]
+			cep.Beavers = cep.Beavers[:1]
 
 		default:
 			fmt.Println("op not implemented or does not exist")
@@ -77,7 +75,7 @@ func Revealgate(cep *Protocol, s int64) {
 
 	}
 }
-
+*/
 /*
 //AddCnstGate gate
 func AddCnstGate(cep *DummyProtocol, wire []uint64, op Operation, s int64) {

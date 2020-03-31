@@ -7,7 +7,78 @@ import (
 	"testing"
 )
 
-func TestProtocol(t *testing.T) {
+func TestProtocol_simpleBeaver(t *testing.T) {
+	peers := map[PartyID]string{
+		0: "localhost:6660",
+		1: "localhost:6661",
+		2: "localhost:6662",
+	}
+
+	//Circuit Id to test
+	var circuitID CircuitID = 1
+
+	N := uint64(len(peers))
+	P := make([]*LocalParty, N, N)
+	dummyProtocol := make([]*Protocol, N, N)
+
+	beaverProtocol := make([]*BeaverProtocol, N, N)
+	wgBeaver := new(sync.WaitGroup)
+
+	for i := range peers {
+		P[i], _ = NewLocalParty(i, peers)
+		P[i].WaitGroup = wgBeaver
+
+		beaverProtocol[i] = P[i].NewBeaverProtocol()
+
+	}
+
+	networkBeaver := GetTestingTCPNetwork(P)
+	fmt.Println("parties connected")
+
+	for i, Pi := range beaverProtocol {
+		Pi.BeaverBindNetwork(networkBeaver[i])
+	}
+
+	for _, p := range beaverProtocol {
+		p.Add(1)
+		go p.BeaverRun()
+
+	}
+
+	wgBeaver.Wait()
+
+	var err error
+	wg := new(sync.WaitGroup)
+	for i := range peers {
+		P[i], err = NewLocalParty(i, peers)
+		P[i].WaitGroup = wg
+		check(err)
+
+		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, beaverProtocol[i])
+	}
+
+	network := GetTestingTCPNetwork(P)
+	fmt.Println("parties connected")
+
+	for i, Pi := range dummyProtocol {
+		Pi.BindNetwork(network[i])
+	}
+
+	for _, p := range dummyProtocol {
+		p.Add(1)
+		go p.Run()
+	}
+	wg.Wait()
+
+	for _, p := range dummyProtocol {
+		fmt.Println(p, "completed with output", p.Output)
+	}
+
+	fmt.Println("test completed")
+}
+
+/*
+func TestProtocol_simpleBeaver(t *testing.T) {
 	peers := map[PartyID]string{
 		0: "localhost:6660",
 		1: "localhost:6661",
@@ -58,6 +129,7 @@ func TestProtocol(t *testing.T) {
 
 	fmt.Println("test completed")
 }
+*/
 
 func TestBeaver(t *testing.T) {
 
@@ -126,6 +198,74 @@ func TestEval(t *testing.T) {
 func test(circuitID CircuitID, t *testing.T) {
 
 	peers := TestCircuits[circuitID-1].Peers
+
+	N := uint64(len(peers))
+	P := make([]*LocalParty, N, N)
+	dummyProtocol := make([]*Protocol, N, N)
+
+	beaverProtocol := make([]*BeaverProtocol, N, N)
+	wgBeaver := new(sync.WaitGroup)
+
+	for i := range peers {
+		P[i], _ = NewLocalParty(i, peers)
+		P[i].WaitGroup = wgBeaver
+
+		beaverProtocol[i] = P[i].NewBeaverProtocol()
+
+	}
+
+	networkBeaver := GetTestingTCPNetwork(P)
+	fmt.Println("parties connected")
+
+	for i, Pi := range beaverProtocol {
+		Pi.BeaverBindNetwork(networkBeaver[i])
+	}
+
+	for _, p := range beaverProtocol {
+		p.Add(1)
+		go p.BeaverRun()
+
+	}
+
+	wgBeaver.Wait()
+
+	var err error
+	wg := new(sync.WaitGroup)
+	for i := range peers {
+		P[i], err = NewLocalParty(i, peers)
+		P[i].WaitGroup = wg
+		check(err)
+
+		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, beaverProtocol[i])
+	}
+
+	network := GetTestingTCPNetwork(P)
+	fmt.Println("parties connected")
+
+	for i, Pi := range dummyProtocol {
+		Pi.BindNetwork(network[i])
+	}
+
+	for _, p := range dummyProtocol {
+		p.Add(1)
+		go p.Run()
+	}
+	wg.Wait()
+
+	for _, p := range dummyProtocol {
+		fmt.Println(p, "completed with output", p.Output)
+		if p.Output != TestCircuits[circuitID-1].ExpOutput {
+			t.Errorf("Party %d got wrong answer: %d when expected output was: %d", p.ID, p.Output, TestCircuits[circuitID-1].ExpOutput)
+		}
+	}
+
+	fmt.Println("test completed")
+}
+
+/*
+func test_simpleBeaver(circuitID CircuitID, t *testing.T) {
+
+	peers := TestCircuits[circuitID-1].Peers
 	genSharedBeavers := GenAllBeaverTriplets(CircuitID(circuitID))
 
 	N := uint64(len(peers))
@@ -169,6 +309,7 @@ func test(circuitID CircuitID, t *testing.T) {
 
 	fmt.Println("test completed")
 }
+*/
 
 func TestVectorOperations(t *testing.T) {
 
@@ -248,25 +389,25 @@ func TestBVF(t *testing.T) {
 
 		N := uint64(len(peers))
 		P := make([]*LocalParty, N, N)
-		dummyProtocol := make([]*BeaverProtocol, N, N)
+		beaverProtocol := make([]*BeaverProtocol, N, N)
 		wg := new(sync.WaitGroup)
 
 		for i := range peers {
 			P[i], _ = NewLocalParty(i, peers)
 			P[i].WaitGroup = wg
 
-			dummyProtocol[i] = P[i].New()
+			beaverProtocol[i] = P[i].NewBeaverProtocol()
 
 		}
 
 		network := GetTestingTCPNetwork(P)
 		fmt.Println("parties connected")
 
-		for i, Pi := range dummyProtocol {
+		for i, Pi := range beaverProtocol {
 			Pi.BeaverBindNetwork(network[i])
 		}
 
-		for _, p := range dummyProtocol {
+		for _, p := range beaverProtocol {
 			p.Add(1)
 			go p.BeaverRun()
 
@@ -277,7 +418,7 @@ func TestBVF(t *testing.T) {
 			var resulta uint64 = 0
 			var resultb uint64 = 0
 			var resultc uint64 = 0
-			for _, p := range dummyProtocol {
+			for _, p := range beaverProtocol {
 				resultc += p.c[i]
 				resulta += p.a[i]
 				resultb += p.b[i]
