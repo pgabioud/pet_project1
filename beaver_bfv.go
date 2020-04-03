@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math"
 	"net"
 
@@ -62,21 +61,15 @@ func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 	}
 
 	bep.params = bfv.DefaultParams[bfv.PN13QP218]
-	/*
-		a_i <- Z^n _t
-		b_i <- Z^n _t
-		c_i = a_i x b_i
-	*/
 	bep.n = uint64(1 << bep.params.LogN)
 	T := bep.params.T
 
 	bep.a = NewRandomVec(bep.n, T)
 	bep.b = NewRandomVec(bep.n, T)
-	fmt.Println("party ", bep.ID, "made a = ", bep.a[:3], " and b = ", bep.b[:3])
+	//fmt.Println("party ", bep.ID, "made a = ", bep.a[:3], " and b = ", bep.b[:3])
 	bep.c = MulVec(&bep.a, &bep.b, T)
 
 	//prepare encryption
-
 	kgen := bfv.NewKeyGenerator(bep.params)
 	bep.sk, bep.pk = kgen.GenKeyPair()
 
@@ -85,8 +78,6 @@ func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 
 //BeaverRun runs beaver prot
 func (bep *BeaverProtocol) BeaverRun() {
-
-	//fmt.Println("beaver protocol running")
 
 	evaluator := bfv.NewEvaluator(bep.params)
 	encryptorPk := bfv.NewEncryptorFromPk(bep.params, bep.pk)

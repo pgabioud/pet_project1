@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math"
 	"math/rand"
 	"net"
@@ -98,7 +97,7 @@ func (cep *Protocol) BindNetwork(nw *TCPNetworkStruct) {
 			}
 		}(conn, rp)
 
-		// Sending loop of remote
+		//Sending loop of remote
 		go func(conn net.Conn, rp *Remote) {
 			var m Message
 			var open = true
@@ -115,7 +114,6 @@ func (cep *Protocol) BindNetwork(nw *TCPNetworkStruct) {
 //Run runs SMC protocol
 func (cep *Protocol) Run() {
 
-	fmt.Println(cep, "is running")
 	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
 	var s = int64(math.Pow(2, 16)) + 1 //prime number used for modulus ring
 	var secretshares = make([]uint64, len(cep.Peers))
@@ -143,7 +141,7 @@ func (cep *Protocol) Run() {
 	for m := range cep.Chan {
 		received[m.Party] = m.Value
 		if len(received) == len(cep.Peers) {
-			fmt.Println(cep, "received is ", received)
+			//fmt.Println(cep, "received is ", received)
 
 			//evaluate circuit in gates.go
 			Evaluate(cep, &received, s)
