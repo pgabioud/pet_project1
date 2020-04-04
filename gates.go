@@ -1,5 +1,6 @@
 package main
 
+/*
 import "fmt"
 
 //Evaluate evaluates different gates for cep using circuitID and shares in modulus ring s

@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"encoding/binary"
 	"math"
@@ -152,3 +153,4 @@ func (cep *Protocol) Run() {
 		cep.WaitGroup.Done()
 	}
 }
+*/

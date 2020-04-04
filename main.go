@@ -61,6 +61,7 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
 	partyBeaverProtocol := lp.NewBeaverProtocol()
 
 	nbBeaver := CountMultGate(circuitID)
+	Beavers := [][3]uint64{{0, 0, 0}}
 	if nbBeaver > 0 {
 		fmt.Println(lp, " start bever protocol")
 		fmt.Println(lp, " beaver protocol binding on the network")
@@ -70,9 +71,12 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
 		fmt.Println(lp, " beaver successfully generated")
 	}
 
+	Beavers = partyBeaverProtocol.ReshapeBeaver(circuitID)
+	fmt.Println(lp, "did this ", Beavers)
+	<-time.After(time.Second)
 	// Create a new circuit evaluation protocol
 	fmt.Println(lp, " create new dummy protocol")
-	dummyProtocol := lp.NewProtocol(partyInput, circuitID, partyBeaverProtocol)
+	dummyProtocol := lp.NewProtocol(partyInput, circuitID, &Beavers)
 
 	// Bind evaluation protocol to the network
 	fmt.Println(lp, " dummy protocol binding to the network")

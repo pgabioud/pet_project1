@@ -22,7 +22,6 @@ type BeaverProtocol struct {
 	c      []uint64
 	params *bfv.Parameters
 	sk     *bfv.SecretKey
-	pk     *bfv.PublicKey
 }
 
 //BeaverRemoteParty sends beaver Messages (ciphertexts) over chans
@@ -71,7 +70,7 @@ func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 
 	//prepare encryption
 	kgen := bfv.NewKeyGenerator(bep.params)
-	bep.sk, bep.pk = kgen.GenKeyPair()
+	bep.sk = kgen.GenSecretKey()
 
 	return bep
 }
@@ -80,7 +79,7 @@ func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 func (bep *BeaverProtocol) BeaverRun() {
 
 	evaluator := bfv.NewEvaluator(bep.params)
-	encryptorPk := bfv.NewEncryptorFromPk(bep.params, bep.pk)
+	encryptorSk := bfv.NewEncryptorFromSk(bep.params, bep.sk)
 	encoder := bfv.NewEncoder(bep.params)
 	decryptorSk := bfv.NewDecryptor(bep.params, bep.sk)
 
@@ -91,7 +90,7 @@ func (bep *BeaverProtocol) BeaverRun() {
 	encoder.EncodeUint(bep.a, plainA)
 	encoder.EncodeUint(bep.b, plainB)
 
-	cipherA := encryptorPk.EncryptNew(plainA)
+	cipherA := encryptorSk.EncryptNew(plainA)
 
 	msg, err := cipherA.MarshalBinary()
 	check(err)
@@ -103,7 +102,6 @@ func (bep *BeaverProtocol) BeaverRun() {
 	}
 	//fmt.Println("sent all cipher")
 
-	received := make(map[PartyID]*bfv.Ciphertext)
 	var cipherCPrime bfv.Ciphertext
 	counter := 0
 
@@ -115,7 +113,6 @@ func (bep *BeaverProtocol) BeaverRun() {
 		check(err)
 
 		if m.TypeM == 0 {
-			received[m.Party] = d
 			r := NewRandomVec(bep.n, bep.params.T)
 			bep.c = SubVec(&bep.c, &r, bep.params.T)
 
@@ -163,6 +160,18 @@ func (bep *BeaverProtocol) BeaverRun() {
 		bep.WaitGroup.Done()
 	}
 
+}
+
+//ReshapeBeaver reshapes beaver triplets when finished protocol
+func (bep *BeaverProtocol) ReshapeBeaver(circuitID CircuitID) [][3]uint64 {
+	nbTriplets := CountMultGate(circuitID)
+	Beavers := make([][3]uint64, nbTriplets)
+	for j := 0; j < int(nbTriplets); j++ {
+		Beavers[j][0] = bep.a[j]
+		Beavers[j][1] = bep.b[j]
+		Beavers[j][2] = bep.c[j]
+	}
+	return Beavers
 }
 
 //BeaverBindNetwork need to send BeaverMessage, not Message

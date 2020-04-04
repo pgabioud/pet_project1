@@ -53,8 +53,10 @@ func TestProtocol_simpleBeaver(t *testing.T) {
 		P[i], err = NewLocalParty(i, peers)
 		P[i].WaitGroup = wg
 		check(err)
+		Beaver := [][3]uint64{{0, 0, 0}}
 
-		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, beaverProtocol[i])
+		Beaver = beaverProtocol[i].ReshapeBeaver(circuitID)
+		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &Beaver)
 	}
 
 	network := GetTestingTCPNetwork(P)
@@ -235,8 +237,10 @@ func test(circuitID CircuitID, t *testing.T) {
 		P[i], err = NewLocalParty(i, peers)
 		P[i].WaitGroup = wg
 		check(err)
+		Beaver := [][3]uint64{{0, 0, 0}}
 
-		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, beaverProtocol[i])
+		Beaver = beaverProtocol[i].ReshapeBeaver(circuitID)
+		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &Beaver)
 	}
 
 	network := GetTestingTCPNetwork(P)
@@ -422,6 +426,63 @@ func TestBVF(t *testing.T) {
 				resultc += p.c[i]
 				resulta += p.a[i]
 				resultb += p.b[i]
+			}
+
+			res1 := mod(int64(resulta*resultb), int64(modulus))
+			res2 := mod(int64(resultc), int64(modulus))
+			if res1 != res2 {
+				t.Error("wrong, youre fake news")
+			}
+		}
+
+		wg.Wait()
+		fmt.Println("test completed")
+	})
+
+	t.Run("Reshape", func(t *testing.T) {
+
+		var modulus uint64 = 65537
+		peers := TestCircuits[7].Peers
+
+		// Create the network for the circuit
+
+		N := uint64(len(peers))
+		P := make([]*LocalParty, N, N)
+		beaverProtocol := make([]*BeaverProtocol, N, N)
+		wg := new(sync.WaitGroup)
+
+		for i := range peers {
+			P[i], _ = NewLocalParty(i, peers)
+			P[i].WaitGroup = wg
+
+			beaverProtocol[i] = P[i].NewBeaverProtocol()
+
+		}
+
+		network := GetTestingTCPNetwork(P)
+		fmt.Println("parties connected")
+
+		for i, Pi := range beaverProtocol {
+			Pi.BeaverBindNetwork(network[i])
+		}
+
+		for _, p := range beaverProtocol {
+			p.Add(1)
+			go p.BeaverRun()
+
+		}
+
+		wg.Wait()
+
+		for i := 0; i < 3; i++ {
+			var resulta uint64 = 0
+			var resultb uint64 = 0
+			var resultc uint64 = 0
+			for _, p := range beaverProtocol {
+				Beaver := p.ReshapeBeaver(7)
+				resultc += Beaver[i][2]
+				resulta += Beaver[i][0]
+				resultb += Beaver[i][1]
 			}
 
 			res1 := mod(int64(resulta*resultb), int64(modulus))

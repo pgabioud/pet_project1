@@ -1,6 +1,5 @@
 package main
 
-/*
 import "fmt"
 
 //Evaluate evaluates different gates for cep using circuitID and shares in modulus ring s
@@ -30,6 +29,7 @@ func Evaluate(cep *Protocol, secrets *map[PartyID]uint64, s int64) {
 
 		case *Reveal:
 			cep.Output = wire[op.(*Reveal).In]
+			fmt.Println("in reveal")
 			Revealgate(cep, s)
 
 		case *Mult:
@@ -75,7 +75,7 @@ func Revealgate(cep *Protocol, s int64) {
 
 	}
 }
-*/
+
 /*
 //AddCnstGate gate
 func AddCnstGate(cep *DummyProtocol, wire []uint64, op Operation, s int64) {
@@ -85,4 +85,5 @@ func AddCnstGate(cep *DummyProtocol, wire []uint64, op Operation, s int64) {
 		wire[op.Output()] = wire[op.(*AddCst).In]
 	}
 }
+
 */

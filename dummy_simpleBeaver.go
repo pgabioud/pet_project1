@@ -1,6 +1,5 @@
 package main
 
-/*
 import (
 	"encoding/binary"
 	"fmt"
@@ -58,7 +57,7 @@ func (lp *LocalParty) NewProtocol(input uint64, circuitID CircuitID, sharedBeave
 	cep.Peers = make(map[PartyID]*Remote, len(lp.Peers))
 
 	cep.Beavers = (*sharedBeavers)
-
+	fmt.Println(cep.Beavers)
 	for i, rp := range lp.Peers {
 		cep.Peers[i] = &Remote{
 			RemoteParty: rp,
@@ -135,6 +134,7 @@ func (cep *Protocol) Run() {
 	//fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
 	for i, peer := range cep.Peers {
 		if peer.ID != cep.ID {
+			fmt.Println("sending message ", secretshares[i])
 			peer.Chan <- Message{cep.ID, secretshares[i]}
 		}
 	}
@@ -142,6 +142,7 @@ func (cep *Protocol) Run() {
 	received := make(map[PartyID]uint64)
 	received[cep.ID] = secretshares[cep.ID]
 	for m := range cep.Chan {
+		fmt.Println(len(cep.Chan))
 		received[m.Party] = m.Value
 		if len(received) == len(cep.Peers) {
 			fmt.Println(cep, "received is ", received)
@@ -155,4 +156,3 @@ func (cep *Protocol) Run() {
 		cep.WaitGroup.Done()
 	}
 }
-*/
