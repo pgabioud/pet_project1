@@ -5,6 +5,7 @@ import (
 	"math"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestProtocol_simpleBeaver(t *testing.T) {
@@ -381,6 +382,55 @@ func TestVectorOperations(t *testing.T) {
 		//fmt.Println(v1Neg)
 	})
 
+}
+
+func TestPerformance(t *testing.T) {
+	times := 5
+
+	t.Run("circuit1", func(t *testing.T) {
+		avg := 0
+		for i := 0; i < times; i++ {
+			start := time.Now()
+			test(1, t)
+			elapsed := time.Since(start)
+			avg += int(elapsed)
+		}
+		avg = avg / times
+		fmt.Println("circuit 1 performance averaged over ", times, " is ", time.Duration(avg))
+	})
+	t.Run("circuit2", func(t *testing.T) {
+		avg := 0
+		for i := 0; i < times; i++ {
+			start := time.Now()
+			test(2, t)
+			elapsed := time.Since(start)
+			avg += int(elapsed)
+		}
+		avg = avg / times
+		fmt.Println("circuit 2 performance averaged over ", times, " is ", time.Duration(avg))
+	})
+	t.Run("circuit3", func(t *testing.T) {
+		avg := 0
+		for i := 0; i < times; i++ {
+			start := time.Now()
+			test(3, t)
+			elapsed := time.Since(start)
+			avg += int(elapsed)
+		}
+		avg = avg / times
+		fmt.Println("circuit 3 performance averaged over ", times, " is ", time.Duration(avg))
+	})
+	t.Run("circuit4", func(t *testing.T) {
+		avg := 0
+		for i := 0; i < times; i++ {
+			start := time.Now()
+			test(4, t)
+			elapsed := time.Since(start)
+			avg += int(elapsed)
+		}
+		avg = avg / times
+		fmt.Println("circuit 4 performance averaged over ", times, " is ", time.Duration(avg))
+	})
 }
 
 func TestBVF(t *testing.T) {
