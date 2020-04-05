@@ -11,8 +11,8 @@ func main() {
 	prog := os.Args[0]
 	args := os.Args[1:]
 
-	if len(args) < 3 {
-		fmt.Println("Usage:", prog, "[Party ID] [Input] [CircuitID]")
+	if len(args) < 4 {
+		fmt.Println("Usage:", prog, "[Party ID] [Input] [CircuitID] [Simple Beaver Generation]")
 		os.Exit(1)
 	}
 
@@ -34,13 +34,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	beavertype, errbeavertype := strconv.ParseBool(args[3])
+	if errbeavertype != nil {
+		fmt.Println("Circuit input should be a boolean (true for simple, false for bfv)")
+		os.Exit(1)
+	}
+
 	if int(partyID) < len(TestCircuits[circuitID-1].Peers) {
-		Client(PartyID(partyID), partyInput, CircuitID(circuitID))
+		Client(PartyID(partyID), partyInput, CircuitID(circuitID), bool(beavertype))
 	}
 }
 
 //Client function
-func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
+func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype bool) {
 	//N := uint64(len(peers))
 	peers := TestCircuits[circuitID-1].Peers
 
@@ -49,36 +55,48 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID) {
 	check(err)
 
 	// Create the network for the circuit
-	network, err := NewTCPNetwork(lp)
+	networkBeaver, err := NewTCPNetwork(lp)
 	check(err)
 
 	// Connect the circuit network
-	err = network.Connect(lp)
+	err = networkBeaver.Connect(lp)
 	check(err)
 	fmt.Println(lp, "connected")
 	<-time.After(time.Second) // Leave time for others to connect
 
-	partyBeaverProtocol := lp.NewBeaverProtocol()
-
 	nbBeaver := CountMultGate(circuitID)
 	Beavers := [][3]uint64{{0, 0, 0}}
 	if nbBeaver > 0 {
-		fmt.Println(lp, " start bever protocol")
-		fmt.Println(lp, " beaver protocol binding on the network")
-		partyBeaverProtocol.BeaverBindNetwork(network)
-		fmt.Println(lp, " beaver protocol running")
-		partyBeaverProtocol.BeaverRun()
-		fmt.Println(lp, " beaver successfully generated")
+		if beavertype {
+			genSharedBeavers := GenAllBeaverTriplets(circuitID)
+			fmt.Println(genSharedBeavers[0])
+			if int(partyID) < len(TestCircuits[circuitID-1].Peers) {
+				Beavers = genSharedBeavers[int(partyID)]
+			}
+		} else {
+			partyBeaverProtocol := lp.NewBeaverProtocol()
+			//fmt.Println(lp, " start bever protocol")
+			//fmt.Println(lp, " beaver protocol binding on the network")
+			partyBeaverProtocol.BeaverBindNetwork(networkBeaver)
+			//fmt.Println(lp, " beaver protocol running")
+			partyBeaverProtocol.BeaverRun()
+			fmt.Println(lp, " beaver successfully generated")
+			Beavers = partyBeaverProtocol.ReshapeBeaver(circuitID)
+		}
 	}
 
-	Beavers = partyBeaverProtocol.ReshapeBeaver(circuitID)
-	fmt.Println(lp, "did this ", Beavers)
-	<-time.After(time.Second)
 	// Create a new circuit evaluation protocol
-	fmt.Println(lp, " create new dummy protocol")
+	//fmt.Println(lp, " create new dummy protocol")
 	dummyProtocol := lp.NewProtocol(partyInput, circuitID, &Beavers)
 
+	network, err := NewTCPNetwork(lp)
+	check(err)
+
+	err = network.Connect(lp)
+	check(err)
+	<-time.After(time.Second)
 	// Bind evaluation protocol to the network
+
 	fmt.Println(lp, " dummy protocol binding to the network")
 	dummyProtocol.BindNetwork(network)
 

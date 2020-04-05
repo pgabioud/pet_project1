@@ -29,7 +29,6 @@ func Evaluate(cep *Protocol, secrets *map[PartyID]uint64, s int64) {
 
 		case *Reveal:
 			cep.Output = wire[op.(*Reveal).In]
-			fmt.Println("in reveal")
 			Revealgate(cep, s)
 
 		case *Mult:

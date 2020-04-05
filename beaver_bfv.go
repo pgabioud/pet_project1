@@ -65,7 +65,6 @@ func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 
 	bep.a = NewRandomVec(bep.n, T)
 	bep.b = NewRandomVec(bep.n, T)
-	//fmt.Println("party ", bep.ID, "made a = ", bep.a[:3], " and b = ", bep.b[:3])
 	bep.c = MulVec(&bep.a, &bep.b, T)
 
 	//prepare encryption
@@ -100,14 +99,12 @@ func (bep *BeaverProtocol) BeaverRun() {
 			peer.Chan <- BeaverMessage{bep.ID, uint64(len(msg)), msg, 0}
 		}
 	}
-	//fmt.Println("sent all cipher")
 
 	var cipherCPrime bfv.Ciphertext
 	counter := 0
 
 	for m := range bep.Chan {
-		//fmt.Println("party", bep.ID, " channel length is ", len(bep.Chan))
-		//fmt.Println("type of m = ", m.TypeM)
+
 		d := bfv.NewCiphertext(bep.params, 1)
 		err := d.UnmarshalBinary(m.Marshal)
 		check(err)
@@ -128,13 +125,11 @@ func (bep *BeaverProtocol) BeaverRun() {
 			evaluator.Mul(d, plainB, d)
 			evaluator.Add(d, plainR, d)
 			evaluator.Add(d, gaussian, d)
-			//fmt.Println("degrees: (d, b, r, gauss)", d.Degree(), plainB.Degree(), plainR.Degree(), gaussian.Degree())
 
 			//sent back to same party
 			msg, err := d.MarshalBinary()
 			check(err)
 
-			//fmt.Println("my party is ", bep.Party, "sending response to ", m.Party)
 			bep.Peers[m.Party].Chan <- BeaverMessage{bep.ID, uint64(len(msg)), msg, 1}
 		} else {
 			if counter == 0 {
@@ -144,7 +139,6 @@ func (bep *BeaverProtocol) BeaverRun() {
 			}
 			counter++
 			if counter == len(bep.Peers)-1 {
-				//fmt.Println("close")
 				close(bep.Chan)
 			}
 		}
@@ -153,8 +147,6 @@ func (bep *BeaverProtocol) BeaverRun() {
 	decryptCipher := decryptorSk.DecryptNew(&cipherCPrime)
 	decodedCypher := encoder.DecodeUint(decryptCipher)
 	bep.c = AddVec(&bep.c, &decodedCypher, bep.params.T)
-
-	//fmt.Println("party ", bep.ID, "managed to make c equal to ", bep.c[:3])
 
 	if bep.WaitGroup != nil {
 		bep.WaitGroup.Done()
@@ -208,7 +200,6 @@ func (bep *BeaverProtocol) BeaverBindNetwork(nw *TCPNetworkStruct) {
 					Marshal: cipher,
 					TypeM:   typeMsg,
 				}
-				//fmt.Println(bep, "receiving", msg.Party, len(msg.Marshal), msg.TypeM, "from", brp)
 				bep.Chan <- msg
 			}
 		}(conn, brp)
@@ -225,7 +216,6 @@ func (bep *BeaverProtocol) BeaverBindNetwork(nw *TCPNetworkStruct) {
 				check(binary.Write(conn, binary.BigEndian, m.Marshal))
 				check(binary.Write(conn, binary.BigEndian, m.TypeM))
 			}
-			//fmt.Println(bep, "writing", m.Party, len(m.Marshal), m.TypeM, "from", brp)
 		}(conn, brp)
 	}
 }

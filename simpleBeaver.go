@@ -3,7 +3,6 @@ package main
 import (
 	"math"
 	"math/rand"
-	"time"
 )
 
 // CountMultGate count the number of multiplicction gate in a given circuit
@@ -24,7 +23,7 @@ func GenBeavers(multGateCount uint64, s int64) [][3]uint64 {
 
 	var i uint64
 	for i = 0; i < multGateCount; i++ {
-		rand.Seed(time.Now().UTC().UnixNano() / 10000000)
+		rand.Seed(1)
 		var singleBeavers = [3]uint64{uint64(rand.Int63n(s)), uint64(rand.Int63n(s))}
 		singleBeavers[2] = uint64(mod(int64(singleBeavers[0]*singleBeavers[1]), s))
 		beavers = append(beavers, singleBeavers)
@@ -37,7 +36,7 @@ func GenBeavers(multGateCount uint64, s int64) [][3]uint64 {
 func GenSharedBeavers(beaverTriplet *[][3]uint64, nbPeers int, s int64) [][][3]uint64 {
 	var sharedBeavers = make([][][3]uint64, nbPeers)
 
-	rand.Seed(time.Now().UTC().UnixNano() / 10000000)
+	rand.Seed(1)
 
 	for x := range sharedBeavers {
 		sharedBeavers[x] = make([][3]uint64, len(*beaverTriplet))
