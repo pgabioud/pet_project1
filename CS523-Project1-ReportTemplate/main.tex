@@ -12,8 +12,8 @@
 
 
 \title{CS523 Project 1 Report}
-\author{Author 1, Author 2}
-\date{February 2020}
+\author{Pierre GABIOUD, Justinas SUKAITIS}
+\date{April 2020}
 
 \begin{document}
 
@@ -25,7 +25,16 @@
     THE REPORT SHOULD NOT EXCEED 3 PAGES.
 \end{abstract}
 \section{Introduction}
-Give a brief introduction about the aim of the project, and your road-map about the design/implementation.
+Project 1 aims at implementing \textbf{Secure Multiparty Computation} which is able to do a series of multiple different operations in a private and reliable manner. 
+In this project, the different parties get the input computation under the form of \textit{circuits} composed of \textit{gates}, that must be done on every party's values without revealing those values to others. \\
+
+The implementation followed the project description road-map. i.e. We started with implementing the secret sharing phase, followed with the simple operations that do not require additional values \textit{Beaver triplets}: addition, subtraction, multiplication by constant and addition by constant. All of the message passing and secret generation is done in the function \textbf{Run}, while the actual circuit is evaluated in \textbf{gates.go} file in the function evaluate. \\
+The multiplication gate however required the use of Beaver triplets: \\
+Part 1 assumes the existence of a reliable third party that can not be compromised in order to generate values required for the multiplication operation. \\
+Part 2 drops this assumption and uses \textbf{BFV}, which is an implementation of the Fan-Vercauteren version of \textbf{Brakerski's scale invariant homomorphic encryption scheme} for the generation of these values. \\
+Both Beaver generator creates an appropriate amount of \textit{Beaver triplets} for each corresponding party, before processing the given circuit.
+
+We note both the \textit{Beaver Triplets} generation and the SMC protocols are entirely separate, where the first protocol only passes the generated values to the second one, in order to respect the Least Common Mechanism paradigm.
 \section{Part I}
 
 \subsection{Threat model}
