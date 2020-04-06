@@ -12,7 +12,7 @@ func main() {
 	args := os.Args[1:]
 
 	if len(args) < 4 {
-		fmt.Println("Usage:", prog, "[Party ID] [Input] [CircuitID] [Simple Beaver Generation]")
+		fmt.Println("Usage:", prog, "[Party ID] [Input] [CircuitID] [BFV Beaver Generation]")
 		os.Exit(1)
 	}
 
@@ -67,7 +67,7 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype 
 	nbBeaver := CountMultGate(circuitID)
 	Beavers := [][3]uint64{{0, 0, 0}}
 	if nbBeaver > 0 {
-		if beavertype {
+		if !beavertype {
 			genSharedBeavers := GenAllBeaverTriplets(circuitID)
 			fmt.Println(genSharedBeavers[0])
 			if int(partyID) < len(TestCircuits[circuitID-1].Peers) {

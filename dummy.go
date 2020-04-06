@@ -1,8 +1,8 @@
 package main
 
-/*
 import (
 	"encoding/binary"
+	"fmt"
 	"math"
 	"math/rand"
 	"net"
@@ -35,8 +35,8 @@ type Protocol struct {
 	Chan  chan Message
 	Peers map[PartyID]*Remote
 
-	circuitID      CircuitID
-	beaverProtocol *BeaverProtocol
+	circuitID CircuitID
+	Beavers   [][3]uint64
 
 	Input  uint64
 	Output uint64
@@ -49,15 +49,14 @@ type Remote struct {
 }
 
 //NewProtocol initializes SMC for defined circuit with ID = circuitID
-func (lp *LocalParty) NewProtocol(input uint64, circuitID CircuitID, beaverProtocol *BeaverProtocol) *Protocol {
+func (lp *LocalParty) NewProtocol(input uint64, circuitID CircuitID, sharedBeavers *[][3]uint64) *Protocol {
 	cep := new(Protocol)
 	cep.LocalParty = lp
 	cep.circuitID = circuitID
 	cep.Chan = make(chan Message, 32)
 	cep.Peers = make(map[PartyID]*Remote, len(lp.Peers))
 
-	cep.beaverProtocol = beaverProtocol
-
+	cep.Beavers = (*sharedBeavers)
 	for i, rp := range lp.Peers {
 		cep.Peers[i] = &Remote{
 			RemoteParty: rp,
@@ -98,7 +97,7 @@ func (cep *Protocol) BindNetwork(nw *TCPNetworkStruct) {
 			}
 		}(conn, rp)
 
-		//Sending loop of remote
+		// Sending loop of remote
 		go func(conn net.Conn, rp *Remote) {
 			var m Message
 			var open = true
@@ -115,6 +114,7 @@ func (cep *Protocol) BindNetwork(nw *TCPNetworkStruct) {
 //Run runs SMC protocol
 func (cep *Protocol) Run() {
 
+	fmt.Println(cep, "is running")
 	rand.Seed(time.Now().UTC().UnixNano() + int64(cep.ID))
 	var s = int64(math.Pow(2, 16)) + 1 //prime number used for modulus ring
 	var secretshares = make([]uint64, len(cep.Peers))
@@ -130,13 +130,12 @@ func (cep *Protocol) Run() {
 	}
 	secretshares[cep.ID] = uint64(mod(int64(cep.Input)-int64(tot), s))
 
-	//fmt.Println("we're making secrets! ", secretshares, "at party ", cep.ID, " total was ", tot, " and input was ", cep.Input)
 	for i, peer := range cep.Peers {
 		if peer.ID != cep.ID {
+			//fmt.Println("sending message ", secretshares[i])
 			peer.Chan <- Message{cep.ID, secretshares[i]}
 		}
 	}
-
 	received := make(map[PartyID]uint64)
 	received[cep.ID] = secretshares[cep.ID]
 	for m := range cep.Chan {
@@ -153,4 +152,3 @@ func (cep *Protocol) Run() {
 		cep.WaitGroup.Done()
 	}
 }
-*/
