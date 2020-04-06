@@ -42,7 +42,7 @@ func TestProtocol_simpleBeaver(t *testing.T) {
 
 	peers := TestCircuits[circuitID-1].Peers
 
-	genSharedBeavers := GenAllBeaverTriplets(CircuitID(circuitID))
+	count := CountMultGate(circuitID)
 
 	N := uint64(len(peers))
 	P := make([]*LocalParty, N, N)
@@ -55,7 +55,8 @@ func TestProtocol_simpleBeaver(t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 
-		if len(genSharedBeavers) > 0 {
+		if count > 0 {
+			genSharedBeavers := GenAllBeaverTriplets(CircuitID(circuitID))
 			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &genSharedBeavers[i])
 		} else {
 			nullBeavers := [][3]uint64{{0, 0, 0}}
@@ -97,6 +98,7 @@ func Test_genBvfBeaver(t *testing.T) {
 
 		N := uint64(len(peers))
 		P := make([]*LocalParty, N, N)
+
 		beaverProtocol := make([]*BeaverProtocol, N, N)
 		wg := new(sync.WaitGroup)
 
@@ -204,7 +206,7 @@ func Test_genBvfBeaver(t *testing.T) {
 
 func TestProtocol_bvfBeaver(t *testing.T) {
 	//Circuit Id to test
-	var circuitID CircuitID = 1
+	var circuitID CircuitID = 9
 
 	peers := TestCircuits[circuitID-1].Peers
 
@@ -212,31 +214,35 @@ func TestProtocol_bvfBeaver(t *testing.T) {
 	P := make([]*LocalParty, N, N)
 	dummyProtocol := make([]*Protocol, N, N)
 
+	count := CountMultGate(circuitID)
 	beaverProtocol := make([]*BeaverProtocol, N, N)
-	wgBeaver := new(sync.WaitGroup)
 
-	for i := range peers {
-		P[i], _ = NewLocalParty(i, peers)
-		P[i].WaitGroup = wgBeaver
+	if count > 0 {
+		wgBeaver := new(sync.WaitGroup)
 
-		beaverProtocol[i] = P[i].NewBeaverProtocol()
+		for i := range peers {
+			P[i], _ = NewLocalParty(i, peers)
+			P[i].WaitGroup = wgBeaver
 
+			beaverProtocol[i] = P[i].NewBeaverProtocol()
+
+		}
+
+		networkBeaver := GetTestingTCPNetwork(P)
+		fmt.Println("parties connected")
+
+		for i, Pi := range beaverProtocol {
+			Pi.BeaverBindNetwork(networkBeaver[i])
+		}
+
+		for _, p := range beaverProtocol {
+			p.Add(1)
+			go p.BeaverRun()
+
+		}
+
+		wgBeaver.Wait()
 	}
-
-	networkBeaver := GetTestingTCPNetwork(P)
-	fmt.Println("parties connected")
-
-	for i, Pi := range beaverProtocol {
-		Pi.BeaverBindNetwork(networkBeaver[i])
-	}
-
-	for _, p := range beaverProtocol {
-		p.Add(1)
-		go p.BeaverRun()
-
-	}
-
-	wgBeaver.Wait()
 
 	var err error
 	wg := new(sync.WaitGroup)
@@ -245,8 +251,9 @@ func TestProtocol_bvfBeaver(t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 		Beaver := [][3]uint64{{0, 0, 0}}
-
-		Beaver = beaverProtocol[i].ReshapeBeaver(circuitID)
+		if count > 0 {
+			Beaver = beaverProtocol[i].ReshapeBeaver(circuitID)
+		}
 		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &Beaver)
 	}
 
@@ -273,7 +280,7 @@ func TestProtocol_bvfBeaver(t *testing.T) {
 	fmt.Println("TestProtocol_bvfBeaver COMPLETED")
 }
 
-func TestEval_bfvBeaver(t *testing.T) {
+func TestEval(t *testing.T) {
 	t.Run("circuit1", func(t *testing.T) {
 		test(1, t)
 	})
@@ -319,31 +326,35 @@ func test(circuitID CircuitID, t *testing.T) {
 	P := make([]*LocalParty, N, N)
 	dummyProtocol := make([]*Protocol, N, N)
 
+	count := CountMultGate(circuitID)
 	beaverProtocol := make([]*BeaverProtocol, N, N)
-	wgBeaver := new(sync.WaitGroup)
 
-	for i := range peers {
-		P[i], _ = NewLocalParty(i, peers)
-		P[i].WaitGroup = wgBeaver
+	if count > 0 {
+		wgBeaver := new(sync.WaitGroup)
 
-		beaverProtocol[i] = P[i].NewBeaverProtocol()
+		for i := range peers {
+			P[i], _ = NewLocalParty(i, peers)
+			P[i].WaitGroup = wgBeaver
 
+			beaverProtocol[i] = P[i].NewBeaverProtocol()
+
+		}
+
+		networkBeaver := GetTestingTCPNetwork(P)
+		fmt.Println("parties connected")
+
+		for i, Pi := range beaverProtocol {
+			Pi.BeaverBindNetwork(networkBeaver[i])
+		}
+
+		for _, p := range beaverProtocol {
+			p.Add(1)
+			go p.BeaverRun()
+
+		}
+
+		wgBeaver.Wait()
 	}
-
-	networkBeaver := GetTestingTCPNetwork(P)
-	fmt.Println("parties connected")
-
-	for i, Pi := range beaverProtocol {
-		Pi.BeaverBindNetwork(networkBeaver[i])
-	}
-
-	for _, p := range beaverProtocol {
-		p.Add(1)
-		go p.BeaverRun()
-
-	}
-
-	wgBeaver.Wait()
 
 	var err error
 	wg := new(sync.WaitGroup)
@@ -352,8 +363,9 @@ func test(circuitID CircuitID, t *testing.T) {
 		P[i].WaitGroup = wg
 		check(err)
 		Beaver := [][3]uint64{{0, 0, 0}}
-
-		Beaver = beaverProtocol[i].ReshapeBeaver(circuitID)
+		if count > 0 {
+			Beaver = beaverProtocol[i].ReshapeBeaver(circuitID)
+		}
 		dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &Beaver)
 	}
 
@@ -372,7 +384,7 @@ func test(circuitID CircuitID, t *testing.T) {
 
 	for _, p := range dummyProtocol {
 		fmt.Println(p, "completed with output", p.Output)
-		if p.Output != TestCircuits[circuitID-1].ExpOutput {
+		if TestCircuits[circuitID-1].ExpOutput != p.Output {
 			t.Errorf("Party %d got wrong answer: %d when expected output was: %d", p.ID, p.Output, TestCircuits[circuitID-1].ExpOutput)
 		}
 	}
@@ -449,14 +461,14 @@ func TestVectorOperations(t *testing.T) {
 	fmt.Println("TestVectorOperations COMPLETED")
 }
 
-func TestPerformance(t *testing.T) {
+func TestPerformance_bvfBeaver(t *testing.T) {
 	times := 7
 	for i := 0; i < len(TestCircuits); i++ {
 		circuitStr := "circuit" + strconv.Itoa(i+1)
 		fmt.Println(circuitStr)
 		t.Run(circuitStr, func(t *testing.T) {
 			avg := 0
-			for i := 0; i < times; i++ {
+			for j := 0; j < times; j++ {
 				start := time.Now()
 				test(CircuitID(i+1), t)
 				elapsed := time.Since(start)
@@ -466,5 +478,73 @@ func TestPerformance(t *testing.T) {
 			fmt.Println(circuitStr, " performance averaged over ", times, " is ", time.Duration(avg))
 		})
 	}
+}
 
+func testSimple(circuitID CircuitID, t *testing.T) {
+
+	peers := TestCircuits[circuitID-1].Peers
+
+	count := CountMultGate(circuitID)
+
+	N := uint64(len(peers))
+	P := make([]*LocalParty, N, N)
+	dummyProtocol := make([]*Protocol, N, N)
+
+	var err error
+	wg := new(sync.WaitGroup)
+	for i := range peers {
+		P[i], err = NewLocalParty(i, peers)
+		P[i].WaitGroup = wg
+		check(err)
+
+		if count > 0 {
+			genSharedBeavers := GenAllBeaverTriplets(CircuitID(circuitID))
+			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &genSharedBeavers[i])
+		} else {
+			nullBeavers := [][3]uint64{{0, 0, 0}}
+			dummyProtocol[i] = P[i].NewProtocol(TestCircuits[circuitID-1].Inputs[i][GateID(i)], circuitID, &nullBeavers)
+		}
+
+	}
+
+	network := GetTestingTCPNetwork(P)
+	fmt.Println("parties connected")
+
+	for i, Pi := range dummyProtocol {
+		Pi.BindNetwork(network[i])
+	}
+
+	for _, p := range dummyProtocol {
+		p.Add(1)
+		go p.Run()
+	}
+	wg.Wait()
+
+	for _, p := range dummyProtocol {
+		fmt.Println(p, "completed with output", p.Output)
+		if TestCircuits[circuitID-1].ExpOutput != p.Output {
+			t.Errorf("Party %d got wrong answer: %d when expected output was: %d", p.ID, p.Output, TestCircuits[circuitID-1].ExpOutput)
+		}
+	}
+
+	fmt.Println("TestProtocol_simpleBeaver COMPLETED")
+}
+
+func TestPerformance_simpleBeaver(t *testing.T) {
+	times := 7
+	for i := 0; i < len(TestCircuits); i++ {
+		circuitStr := "circuit" + strconv.Itoa(i+1)
+		fmt.Println(circuitStr)
+		t.Run(circuitStr, func(t *testing.T) {
+			avg := 0
+			for j := 0; j < times; j++ {
+				start := time.Now()
+				testSimple(CircuitID(i+1), t)
+				elapsed := time.Since(start)
+				avg += int(elapsed)
+			}
+			avg = avg / times
+			fmt.Println(circuitStr, " performance averaged over ", times, " is ", time.Duration(avg))
+		})
+	}
 }

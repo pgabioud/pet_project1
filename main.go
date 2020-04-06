@@ -49,23 +49,13 @@ func main() {
 func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype bool) {
 	//N := uint64(len(peers))
 	peers := TestCircuits[circuitID-1].Peers
+	Beavers := [][3]uint64{{0, 0, 0}}
+	nbBeaver := CountMultGate(circuitID)
 
 	// Create a local party
 	lp, err := NewLocalParty(partyID, peers)
 	check(err)
 
-	// Create the network for the circuit
-	networkBeaver, err := NewTCPNetwork(lp)
-	check(err)
-
-	// Connect the circuit network
-	err = networkBeaver.Connect(lp)
-	check(err)
-	fmt.Println(lp, "connected")
-	<-time.After(time.Second) // Leave time for others to connect
-
-	nbBeaver := CountMultGate(circuitID)
-	Beavers := [][3]uint64{{0, 0, 0}}
 	if nbBeaver > 0 {
 		if !beavertype {
 			genSharedBeavers := GenAllBeaverTriplets(circuitID)
@@ -74,6 +64,16 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype 
 				Beavers = genSharedBeavers[int(partyID)]
 			}
 		} else {
+			// Create the network for the circuit
+			networkBeaver, err := NewTCPNetwork(lp)
+			check(err)
+
+			// Connect the circuit network
+			err = networkBeaver.Connect(lp)
+			check(err)
+			fmt.Println(lp, "connected")
+			<-time.After(time.Second) // Leave time for others to connect
+
 			partyBeaverProtocol := lp.NewBeaverProtocol()
 			//fmt.Println(lp, " start bever protocol")
 			//fmt.Println(lp, " beaver protocol binding on the network")
