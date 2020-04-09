@@ -463,8 +463,8 @@ func TestVectorOperations(t *testing.T) {
 }
 
 func TestPerformance_bvfBeaver(t *testing.T) {
-	times := 7
-	for i := 0; i < len(TestCircuits); i++ {
+	times := 10
+	for i := 7; i < len(TestCircuits); i++ {
 		circuitStr := "circuit" + strconv.Itoa(i+1)
 		fmt.Println(circuitStr)
 		t.Run(circuitStr, func(t *testing.T) {
@@ -532,7 +532,7 @@ func testSimple(circuitID CircuitID, t *testing.T) {
 }
 
 func TestPerformance_simpleBeaver(t *testing.T) {
-	times := 7
+	times := 10
 	for i := 0; i < len(TestCircuits); i++ {
 		circuitStr := "circuit" + strconv.Itoa(i+1)
 		fmt.Println(circuitStr)
@@ -549,3 +549,29 @@ func TestPerformance_simpleBeaver(t *testing.T) {
 		})
 	}
 }
+
+//RESULT WITH 10 iterations:
+/*
+--- PASS: TestPerformance_simpleBeaver (21.92s)
+    --- PASS: TestPerformance_simpleBeaver/circuit1 (1.86s)
+    --- PASS: TestPerformance_simpleBeaver/circuit2 (1.14s)
+    --- PASS: TestPerformance_simpleBeaver/circuit3 (1.95s)
+    --- PASS: TestPerformance_simpleBeaver/circuit4 (2.29s)
+    --- PASS: TestPerformance_simpleBeaver/circuit5 (2.07s)
+    --- PASS: TestPerformance_simpleBeaver/circuit6 (2.79s)
+    --- PASS: TestPerformance_simpleBeaver/circuit7 (2.96s)
+    --- PASS: TestPerformance_simpleBeaver/circuit8 (3.41s)
+	--- PASS: TestPerformance_simpleBeaver/circuit9 (3.46s)
+
+
+--- PASS: TestPerformance_bvfBeaver (31.00s)
+    --- PASS: TestPerformance_bvfBeaver/circuit1 (2.01s)
+    --- PASS: TestPerformance_bvfBeaver/circuit2 (1.14s)
+    --- PASS: TestPerformance_bvfBeaver/circuit3 (1.84s)
+    --- PASS: TestPerformance_bvfBeaver/circuit4 (1.95s)
+    --- PASS: TestPerformance_bvfBeaver/circuit5 (1.98s)
+    --- PASS: TestPerformance_bvfBeaver/circuit6 (2.43s)
+    --- PASS: TestPerformance_bvfBeaver/circuit7 (8.19s)
+	--- PASS: TestPerformance_bvfBeaver/circuit8 (11.47s)
+	--- PASS: TestPerformance_bvfBeaver/circuit9 (10.27s)
+*/
