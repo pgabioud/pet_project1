@@ -74,7 +74,7 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype 
 			fmt.Println(lp, "connected")
 			<-time.After(time.Second) // Leave time for others to connect
 
-			partyBeaverProtocol := lp.NewBeaverProtocol()
+			partyBeaverProtocol := lp.NewBeaverProtocol(nbBeaver)
 			//fmt.Println(lp, " start bever protocol")
 			//fmt.Println(lp, " beaver protocol binding on the network")
 			partyBeaverProtocol.BeaverBindNetwork(networkBeaver)

@@ -40,12 +40,20 @@ type BeaverMessage struct {
 
 //BeaverInputs are the BFV scheme parameters
 type BeaverInputs struct {
-	n uint64 //degree of R
-	s int64  //plaintext modulus
+	n uint64 //number of triplets
 }
 
+//NewBeaverInputs defines the closest power of 2 for the number of beavers required
+/*
+func (bi *BeaverInputs) NewBeaverInputs(n uint64) (inputs *BeaverInputs) {
+	inputs = new(BeaverInputs)
+	inputs.n = uint64(math.Ceil(math.Log2(float64(n))))
+	return
+}
+*/
+
 //NewBeaverProtocol beaver protocol, creates the protocol
-func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
+func (lp *LocalParty) NewBeaverProtocol(n uint64) *BeaverProtocol {
 
 	bep := new(BeaverProtocol)
 	bep.LocalParty = lp
@@ -60,7 +68,17 @@ func (lp *LocalParty) NewBeaverProtocol() *BeaverProtocol {
 	}
 
 	bep.params = bfv.DefaultParams[bfv.PN13QP218]
+
+	//compute the closest power of 2 equal or greater than required number of beaver triplets
+	//we need a power of 2 since lattigo.ring does not work otherwise
+	bep.params.LogN = uint64(math.Ceil(math.Log2(float64(n))))
+	//min size is 2
+	if bep.params.LogN < 1 {
+		bep.params.LogN = 1
+	}
+
 	bep.n = uint64(1 << bep.params.LogN)
+
 	T := bep.params.T
 
 	bep.a = NewRandomVec(bep.n, T)

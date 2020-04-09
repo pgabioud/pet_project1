@@ -92,7 +92,8 @@ func Test_genBvfBeaver(t *testing.T) {
 	t.Run("New", func(t *testing.T) {
 
 		var modulus uint64 = 65537
-		peers := TestCircuits[7].Peers
+		var circuitID CircuitID = 8
+		peers := TestCircuits[circuitID-1].Peers
 
 		// Create the network for the circuit
 
@@ -106,7 +107,7 @@ func Test_genBvfBeaver(t *testing.T) {
 			P[i], _ = NewLocalParty(i, peers)
 			P[i].WaitGroup = wg
 
-			beaverProtocol[i] = P[i].NewBeaverProtocol()
+			beaverProtocol[i] = P[i].NewBeaverProtocol(CountMultGate(circuitID))
 
 		}
 
@@ -161,7 +162,7 @@ func Test_genBvfBeaver(t *testing.T) {
 			P[i], _ = NewLocalParty(i, peers)
 			P[i].WaitGroup = wg
 
-			beaverProtocol[i] = P[i].NewBeaverProtocol()
+			beaverProtocol[i] = P[i].NewBeaverProtocol(4)
 
 		}
 
@@ -224,7 +225,7 @@ func TestProtocol_bvfBeaver(t *testing.T) {
 			P[i], _ = NewLocalParty(i, peers)
 			P[i].WaitGroup = wgBeaver
 
-			beaverProtocol[i] = P[i].NewBeaverProtocol()
+			beaverProtocol[i] = P[i].NewBeaverProtocol(count)
 
 		}
 
@@ -336,7 +337,7 @@ func test(circuitID CircuitID, t *testing.T) {
 			P[i], _ = NewLocalParty(i, peers)
 			P[i].WaitGroup = wgBeaver
 
-			beaverProtocol[i] = P[i].NewBeaverProtocol()
+			beaverProtocol[i] = P[i].NewBeaverProtocol(count)
 
 		}
 
