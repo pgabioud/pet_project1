@@ -464,7 +464,7 @@ func TestVectorOperations(t *testing.T) {
 
 func TestPerformance_bvfBeaver(t *testing.T) {
 	times := 10
-	for i := 7; i < len(TestCircuits); i++ {
+	for i := 0; i < len(TestCircuits); i++ {
 		circuitStr := "circuit" + strconv.Itoa(i+1)
 		fmt.Println(circuitStr)
 		t.Run(circuitStr, func(t *testing.T) {
