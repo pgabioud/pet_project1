@@ -75,10 +75,9 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype 
 			<-time.After(time.Second) // Leave time for others to connect
 
 			partyBeaverProtocol := lp.NewBeaverProtocol(nbBeaver)
-			//fmt.Println(lp, " start bever protocol")
-			//fmt.Println(lp, " beaver protocol binding on the network")
+
 			partyBeaverProtocol.BeaverBindNetwork(networkBeaver)
-			//fmt.Println(lp, " beaver protocol running")
+
 			partyBeaverProtocol.BeaverRun()
 			fmt.Println(lp, " beaver successfully generated")
 			Beavers = partyBeaverProtocol.ReshapeBeaver(circuitID)
@@ -86,7 +85,6 @@ func Client(partyID PartyID, partyInput uint64, circuitID CircuitID, beavertype 
 	}
 
 	// Create a new circuit evaluation protocol
-	//fmt.Println(lp, " create new dummy protocol")
 	dummyProtocol := lp.NewProtocol(partyInput, circuitID, &Beavers)
 
 	network, err := NewTCPNetwork(lp)

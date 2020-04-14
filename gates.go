@@ -74,15 +74,3 @@ func Revealgate(cep *Protocol, s int64) {
 
 	}
 }
-
-/*
-//AddCnstGate gate
-func AddCnstGate(cep *DummyProtocol, wire []uint64, op Operation, s int64) {
-	if cep.ID == 0 {
-		wire[op.Output()] = uint64(mod(int64(wire[op.(*AddCst).In])+int64(op.(*AddCst).CstValue), s))
-	} else {
-		wire[op.Output()] = wire[op.(*AddCst).In]
-	}
-}
-
-*/

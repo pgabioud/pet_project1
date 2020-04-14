@@ -43,15 +43,6 @@ type BeaverInputs struct {
 	n uint64 //number of triplets
 }
 
-//NewBeaverInputs defines the closest power of 2 for the number of beavers required
-/*
-func (bi *BeaverInputs) NewBeaverInputs(n uint64) (inputs *BeaverInputs) {
-	inputs = new(BeaverInputs)
-	inputs.n = uint64(math.Ceil(math.Log2(float64(n))))
-	return
-}
-*/
-
 //NewBeaverProtocol beaver protocol, creates the protocol
 func (lp *LocalParty) NewBeaverProtocol(n uint64) *BeaverProtocol {
 

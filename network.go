@@ -57,7 +57,6 @@ func (tnw *TCPNetworkStruct) Connect(lp *LocalParty) error {
 		if err != nil {
 			panic(fmt.Errorf("cannot create listening socket: %s", err))
 		}
-		//fmt.Println(lp, "now listening on", listener.Addr())
 
 		for range waitFor {
 			conn, err := listener.Accept()
@@ -79,15 +78,12 @@ func (tnw *TCPNetworkStruct) Connect(lp *LocalParty) error {
 		check(listener.Close())
 	}()
 
-	//<- time.After(time.Second)
-
 	for _, p := range dialFor {
 		go func(rp *RemoteParty) {
 			var conn net.Conn
 			var err error
 			for attempt := 0; conn == nil && attempt < CONNECT_ATTEMPTS; attempt++ {
 				if attempt > 0 {
-					//fmt.Println("retrying:", err)
 					<-time.After(CONNECT_ATTEMPTS_DELAY * time.Millisecond)
 				}
 				conn, err = net.Dial("tcp", rp.Addr)
