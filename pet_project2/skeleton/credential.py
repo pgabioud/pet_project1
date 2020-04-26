@@ -8,9 +8,12 @@
 # (network API expects byte[] as input).
 
 from serialization import jsonpickle
-
-
+import random as rd
+import petrelic
+from petrelic.multiplicative.pairing import G1, G2
 class PSSignature(object):
+
+    L = 2
     """PS's Multi-message signature from section 4.2
     
     **Important** This class has no direct use in the project.
@@ -20,14 +23,37 @@ class PSSignature(object):
     misunderstandings/problems early on.
     """
 
-    def generate_key():
-        pass
+    def generate_key(self):
+        g = G2.generator()
+        sk = []
+        pk = []
+        for i in range(self.L + 1):
+            y = petrelic.bn.Bn.from_num(rd.randint(1, 2**16 + 1))
+            sk.append(y)
+            pk.append(g**y)
+            
+        return sk, pk
 
-    def sign(sk, messages):
-        pass
+    def sign(self, sk, messages):             
+        exp = G1.order().random()
+        h = G1.generator() ** exp
+        sum = sk[0]
+        for i in range(len(sk)-1):
+            sum += sk[i+1] * hash(messages[i])
+        return [h, h**sum]
 
-    def verify(pk, signature):
-        pass
+
+    def verify(self, pk, signature, messages):
+        if signature[0] == G1.neutral_element():
+            return False
+
+        prod = pk[0]
+        for i in range(len(pk)-1):
+            prod *= pk[i+1]** hash(messages[i])
+        if signature[0].pair(prod) != signature[1].pair(G2.generator()):
+            return False
+        else:
+            return True
 
 
 class Issuer(object):
@@ -41,7 +67,17 @@ class Issuer(object):
             valid_attributes (string): all valid attributes. The issuer
             will never be called with a value outside this list
         """
-        pass
+        # (p, g, G1, G2, GT, our u)
+        self.p = petrelic.bn.Bn.from_num(2**16 + 1)
+        self.g = G1.generator()
+        self.G1 = G1
+        self.G2 = G2
+        self.GT = petrelic.multiplicative.pairing.GT
+        
+
+        self.u = rd.randint(1,self.p)
+        self.pk = self.g ** self.u
+
 
     def get_serialized_public_key(self):
         """Returns the public parameters and the public key of the issuer.
@@ -52,8 +88,10 @@ class Issuer(object):
         Returns:
             byte[]: issuer's public params and key
         """
-        pass
-
+        
+        return jsonpickle.encode([self.p, self.g, self.G1, self.G2, self.GT, self.pk])
+        
+        
     def get_serialized_secret_key(self):
         """Returns the secret key of the issuer.
 
@@ -63,9 +101,9 @@ class Issuer(object):
         Returns:
             byte[]: issuer's secret params and key
         """
-        pass
+        return jsonpickle.encode(self.u)
 
-    def issue():
+    def issue(self):
         """Issues a credential for a new user. 
 
         This function should receive a issuance request from the user
@@ -74,7 +112,7 @@ class Issuer(object):
 
         You should design the issue_request as you see fit.
         """
-        pass
+        
 
 
 class AnonCredential(object):
