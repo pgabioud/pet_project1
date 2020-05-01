@@ -76,17 +76,15 @@ class Issuer(object):
         self.G2 = G2
         self.GT = petrelic.multiplicative.pairing.GT
         self.valid_attributes = valid_attributes
-        
-
-        
+             
         self.sk = []
+        self.pkt = []
         self.pk = []
         for i in range(len(valid_attributes) + 1):
             y = petrelic.bn.Bn.from_num(rd.randint(1, self.G2.order()))
             self.sk.append(y)
-            self.pk.append(self.gt**y)
-            
-        
+            self.pk.append(self.g**y)
+            self.pkt.append(self.gt**y)
 
 
     def get_serialized_public_key(self):
@@ -113,7 +111,7 @@ class Issuer(object):
         """
         return jsonpickle.encode(self.sk)
 
-    def issue(self):
+    def issue(self, C, user, revealed_attr):
         """Issues a credential for a new user. 
 
         This function should receive a issuance request from the user
@@ -122,21 +120,36 @@ class Issuer(object):
 
         You should design the issue_request as you see fit.
         """
-        
+        rd.seed(user)
+        u = petrelic.bn.Bn.from_num(rd.randint(1, self.G1.order()))
+        X = self.pk[0]
+        sigma2 = X * C
+        for i in range(len(self.valid_attributes)):
+            if revealed_attr[i] != 'X':
+                Y = self.pk[i+1]
+                sigma2 *= Y ** petrelic.bn.Bn.from_num(revealed_attr[i])
+
+        sigma = [self.g ** u, sigma2 ** u]
+        return sigma
 
 
 class AnonCredential(object):
     """An AnonCredential"""
 
-    def create_issue_request():
+    def create_issue_request(self, attributes, issuer_pks, issuer_g, t):
         """Gets all known attributes (subscription) of a user and creates an issuance request.
         You are allowed to add extra attributes to the issuance.
 
         You should design the issue_request as you see fit.
         """
-        pass
+        C = issuer_g**t
+        for Y, a in zip(issuer_pks, attributes):
+            C *= Y**int(a)
+        #ZERO KNOWLEDGE PROOF PART 1
 
-    def receive_issue_response(sigma = [0,0], t= 1):
+        #return PROOF, C
+
+    def receive_issue_response(self, sigma = [0,0], t= 1):
         """This function finishes the credential based on the response of issue.
 
         Hint: you need both secret values from the create_issue_request and response
@@ -144,9 +157,10 @@ class AnonCredential(object):
 
         You should design the issue_request as you see fit.
         """
-        return [sigma[0], sigma[1]/ sigma[0]**t]
+        
+        return Signature(sigma[0], sigma[1]/ sigma[0]**t)
 
-    def sign(self, message, revealed_attr):
+    def sign(self, message, revealed_attr, sigma):
         """Signs the message.
 
         Args:
@@ -156,13 +170,21 @@ class AnonCredential(object):
         Return:
             Signature: signature
         """
-        pass
+        toHash = message.decode("utf-8")
+        toHash += str(sigma[0]) + str(sigma[1])
+        for attr in revealed_attr:
+            toHash += attr
+        hashSign = hash(toHash)
+        return hashSign
 
 
 class Signature(object):
     """A Signature"""
 
-    def verify(self, issuer_public_info, public_attrs, message):
+    def __init__(self, sigma0, sigma1):
+        self.sigma = [sigma0, sigma1]
+
+    def verify(self, issuer_public_info, public_attrs, message, sigmaPrime, hashSignMsg, proof):
         """Verifies a signature.
 
         Args:
@@ -173,7 +195,17 @@ class Signature(object):
         returns:
             valid (boolean): is signature valid
         """
-        pass
+
+        toHash = message.decode("utf-8")
+        toHash += str(sigmaPrime[0]) + str(sigmaPrime[1])
+        for attr in public_attrs:
+            toHash += attr
+        hashSign = hash(toHash)
+        if hashSignMsg != hashSign:
+            return False
+
+        # zero knowledge proof with: proof, sigmaPrime,...
+
 
     def serialize(self):
         """Serialize the object to a byte array.
@@ -181,7 +213,7 @@ class Signature(object):
         Returns: 
             byte[]: a byte array 
         """
-        pass
+        return bytearray(jsonpickle.encode(self.sigma), "utf-8")
 
     @staticmethod
     def deserialize(data):
@@ -193,7 +225,7 @@ class Signature(object):
         Returns:
             Signature
         """
-        pass
+        return Signature(jsonpickle.decode(data.decode("utf-8"))[0], jsonpickle.decode(data.decode("utf-8"))[1])
 
 
 

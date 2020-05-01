@@ -4,7 +4,7 @@ Classes that you need to complete.
 
 # Optional import
 from serialization import jsonpickle
-
+import credential
 class Server:
     """Server"""
     a = []
@@ -28,7 +28,12 @@ class Server:
             You are free to design this as you see fit, but all commuincations
             needs to be encoded as byte arrays.
         """
-        raise NotImplementedError
+        Issuer = credential.Issuer()
+        Issuer.setup(valid_attributes)
+        pub = Issuer.get_serialized_public_key()
+        sec = Issuer.get_serialized_secret_key()
+
+        return pub, sec
 
     def register(self, server_sk, issuance_request, username, attributes):
         """ Registers a new account on the server.
