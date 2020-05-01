@@ -5,10 +5,10 @@ Classes that you need to complete.
 # Optional import
 from serialization import jsonpickle
 
-
 class Server:
     """Server"""
-
+    a = []
+    
     @staticmethod
     def generate_ca(valid_attributes):
         """Initializes the credential system. Runs exactly once in the

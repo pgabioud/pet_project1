@@ -28,7 +28,7 @@ class PSSignature(object):
         sk = []
         pk = []
         for i in range(self.L + 1):
-            y = petrelic.bn.Bn.from_num(rd.randint(1, 2**16 + 1))
+            y = petrelic.bn.Bn.from_num(rd.randint(1, G2.order()))
             sk.append(y)
             pk.append(g**y)
             
@@ -39,7 +39,8 @@ class PSSignature(object):
         h = G1.generator() ** exp
         sum = sk[0]
         for i in range(len(sk)-1):
-            sum += sk[i+1] * hash(messages[i])
+            rd.seed(messages[i])
+            sum += sk[i+1] * rd.randint(1, G1.order())
         return [h, h**sum]
 
 
@@ -49,7 +50,8 @@ class PSSignature(object):
 
         prod = pk[0]
         for i in range(len(pk)-1):
-            prod *= pk[i+1]** hash(messages[i])
+            rd.seed(messages[i])
+            prod *= pk[i+1]** rd.randint(1, G1.order())
         if signature[0].pair(prod) != signature[1].pair(G2.generator()):
             return False
         else:
@@ -68,15 +70,23 @@ class Issuer(object):
             will never be called with a value outside this list
         """
         # (p, g, G1, G2, GT, our u)
-        self.p = petrelic.bn.Bn.from_num(2**16 + 1)
         self.g = G1.generator()
+        self.gt = G2.generator()
         self.G1 = G1
         self.G2 = G2
         self.GT = petrelic.multiplicative.pairing.GT
+        self.valid_attributes = valid_attributes
         
 
-        self.u = rd.randint(1,self.p)
-        self.pk = self.g ** self.u
+        
+        self.sk = []
+        self.pk = []
+        for i in range(len(valid_attributes) + 1):
+            y = petrelic.bn.Bn.from_num(rd.randint(1, self.G2.order()))
+            self.sk.append(y)
+            self.pk.append(self.gt**y)
+            
+        
 
 
     def get_serialized_public_key(self):
@@ -89,7 +99,7 @@ class Issuer(object):
             byte[]: issuer's public params and key
         """
         
-        return jsonpickle.encode([self.p, self.g, self.G1, self.G2, self.GT, self.pk])
+        return jsonpickle.encode([self.g, self.G1, self.G2, self.GT, self.valid_attributes, self.pk])
         
         
     def get_serialized_secret_key(self):
@@ -101,7 +111,7 @@ class Issuer(object):
         Returns:
             byte[]: issuer's secret params and key
         """
-        return jsonpickle.encode(self.u)
+        return jsonpickle.encode(self.sk)
 
     def issue(self):
         """Issues a credential for a new user. 
@@ -126,7 +136,7 @@ class AnonCredential(object):
         """
         pass
 
-    def receive_issue_response():
+    def receive_issue_response(sigma = [0,0], t= 1):
         """This function finishes the credential based on the response of issue.
 
         Hint: you need both secret values from the create_issue_request and response
@@ -134,7 +144,7 @@ class AnonCredential(object):
 
         You should design the issue_request as you see fit.
         """
-        pass
+        return [sigma[0], sigma[1]/ sigma[0]**t]
 
     def sign(self, message, revealed_attr):
         """Signs the message.
@@ -184,3 +194,7 @@ class Signature(object):
             Signature
         """
         pass
+
+
+
+
