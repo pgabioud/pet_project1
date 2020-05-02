@@ -5,10 +5,12 @@ Classes that you need to complete.
 # Optional import
 from serialization import jsonpickle
 import credential
+import petrelic
+import random as rd
 class Server:
     """Server"""
-    a = []
     
+
     @staticmethod
     def generate_ca(valid_attributes):
         """Initializes the credential system. Runs exactly once in the
@@ -29,13 +31,14 @@ class Server:
             needs to be encoded as byte arrays.
         """
         Issuer = credential.Issuer()
-        Issuer.setup(valid_attributes)
+        Issuer.setup(valid_attributes.split(","))
         pub = Issuer.get_serialized_public_key()
         sec = Issuer.get_serialized_secret_key()
 
         return pub, sec
 
-    def register(self, server_sk, issuance_request, username, attributes):
+    @staticmethod
+    def register(server_sk, issuance_request, username, attributes):
         """ Registers a new account on the server.
 
         Args:
@@ -50,8 +53,14 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
-        raise NotImplementedError
-
+        server_sk = jsonpickle.decode(server_sk.decode("utf-8"))
+        #server_pk = server_sk.get("public_params")
+        print("issuance req is ", issuance_request, type(issuance_request))
+        issuance_request = jsonpickle.decode(issuance_request)
+        sigma = credential.Issuer.issue(issuance_request.get("C"), username, "XX", server_sk)
+        print('hi', sigma)
+        
+        return bytearray(jsonpickle.encode(sigma), 'utf-8')
     def check_request_signature(
         self, server_pk, message, revealed_attributes, signature
     ):
@@ -91,7 +100,20 @@ class Client:
                 from prepare_registration to proceed_registration_response.
                 You need to design the state yourself.
         """
-        raise NotImplementedError
+        server_pk = jsonpickle.decode(server_pk.decode("utf-8"))
+
+        g = server_pk.get("g")
+        Yi = server_pk.get("pk")
+        t = petrelic.bn.Bn.from_num(rd.randint(1, server_pk.get("G1").order()))
+        
+        C = g**t
+        for i in range(len(Yi)):
+            C *= Yi[i] ** int(attributes[i])
+
+        hash_of_C = hash(C)
+        request = (jsonpickle.encode({"C": C, "hash": hash_of_C})).encode('utf-8')
+        private_state = {"C": C, "t": t}
+        return (request, private_state) 
 
     def proceed_registration_response(self, server_pk, server_response, private_state):
         """Process the response from the server.
@@ -105,7 +127,10 @@ class Client:
         Return:
             credential (byte []): create an attribute-based credential for the user
         """
-        raise NotImplementedError
+        sigma = jsonpickle.decode(server_response.decode('utf-8'))
+        sigma = [sigma[0], sigma[1]/(sigma[0]**private_state.get("t"))]
+        
+        return bytearray(jsonpickle.encode(sigma), 'utf-8')
 
     def sign_request(self, server_pk, credential, message, revealed_info):
         """Signs the request with the clients credential.

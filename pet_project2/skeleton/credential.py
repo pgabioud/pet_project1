@@ -76,7 +76,6 @@ class Issuer(object):
         self.G2 = G2
         self.GT = petrelic.multiplicative.pairing.GT
         self.valid_attributes = valid_attributes
-             
         self.sk = []
         self.pkt = []
         self.pk = []
@@ -97,7 +96,9 @@ class Issuer(object):
             byte[]: issuer's public params and key
         """
         
-        return jsonpickle.encode([self.g, self.G1, self.G2, self.GT, self.valid_attributes, self.pk])
+        return bytearray(jsonpickle.encode({"g": self.g, "G1": self.G1, "G2": self.G2, "GT": self.GT, 
+                                            "valid_attr": self.valid_attributes, "pk": self.pk[1:], 
+                                            "pkt": self.pkt}), 'utf-8')
         
         
     def get_serialized_secret_key(self):
@@ -109,9 +110,12 @@ class Issuer(object):
         Returns:
             byte[]: issuer's secret params and key
         """
-        return jsonpickle.encode(self.sk)
+        return bytearray(jsonpickle.encode({"sk": self.sk, "X": self.pk[0], "public_params": {"g": self.g, "G1": self.G1, 
+                                            "G2": self.G2, "GT": self.GT, "valid_attr": self.valid_attributes, 
+                                            "pk": self.pk[1:], "pkt": self.pkt}}), 'utf-8')
 
-    def issue(self, C, user, revealed_attr):
+    @staticmethod
+    def issue(C, user, revealed_attr, server_sk):
         """Issues a credential for a new user. 
 
         This function should receive a issuance request from the user
@@ -121,15 +125,15 @@ class Issuer(object):
         You should design the issue_request as you see fit.
         """
         rd.seed(user)
-        u = petrelic.bn.Bn.from_num(rd.randint(1, self.G1.order()))
-        X = self.pk[0]
+        u = petrelic.bn.Bn.from_num(rd.randint(1, server_sk.get("public_params").get("G1").order()))
+        X = server_sk.get("X")
         sigma2 = X * C
-        for i in range(len(self.valid_attributes)):
+        for i in range(len(server_sk.get("public_params").get("valid_attr"))):
             if revealed_attr[i] != 'X':
-                Y = self.pk[i+1]
+                Y = server_sk.get("public_params").get("pk")[i]
                 sigma2 *= Y ** petrelic.bn.Bn.from_num(revealed_attr[i])
 
-        sigma = [self.g ** u, sigma2 ** u]
+        sigma = [server_sk.get("public_params").get("g") ** u, sigma2 ** u]
         return sigma
 
 
