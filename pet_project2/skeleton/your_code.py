@@ -53,12 +53,12 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
+        print(attributes)
         server_sk = jsonpickle.decode(server_sk.decode("utf-8"))
-        #server_pk = server_sk.get("public_params")
-        print("issuance req is ", issuance_request, type(issuance_request))
         issuance_request = jsonpickle.decode(issuance_request)
-        sigma = credential.Issuer.issue(issuance_request.get("C"), username, "XX", server_sk)
-        print('hi', sigma)
+
+
+        sigma = credential.Issuer.issue(issuance_request.get("C"), username, attributes + ",X", server_sk)
         
         return bytearray(jsonpickle.encode(sigma), 'utf-8')
     def check_request_signature(
@@ -108,13 +108,14 @@ class Client:
         t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         sk = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         attributes_list = attributes.split(",")
-        attributes_list.append(sk)
+
+
         
         AnonCredential = credential.AnonCredential()
-        C, gamma, r = AnonCredential.create_issue_request(attributes_list, G1, Yi, g, t)
-
+        C, gamma, r = AnonCredential.create_issue_request([sk], G1, Yi, g, t, len(attributes_list))
         request = (jsonpickle.encode({"C": C, "gamma": gamma, "r": r})).encode('utf-8')
         private_state = {"C": C, "t": t}
+        
         return (request, private_state) 
 
     def proceed_registration_response(self, server_pk, server_response, private_state):
