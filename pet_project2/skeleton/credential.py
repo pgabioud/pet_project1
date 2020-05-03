@@ -125,13 +125,14 @@ class Issuer(object):
         You should design the issue_request as you see fit.
         """
         rd.seed(user)
+        revealed_attr = revealed_attr.split(",")
         u = petrelic.bn.Bn.from_num(rd.randint(1, server_sk.get("public_params").get("G1").order()))
         X = server_sk.get("X")
         sigma2 = X * C
         for i in range(len(server_sk.get("public_params").get("valid_attr"))):
             if revealed_attr[i] != 'X':
                 Y = server_sk.get("public_params").get("pk")[i]
-                sigma2 *= Y ** petrelic.bn.Bn.from_num(revealed_attr[i])
+                sigma2 *= Y ** petrelic.bn.Bn.from_num(int(revealed_attr[i]))
 
         sigma = [server_sk.get("public_params").get("g") ** u, sigma2 ** u]
         return sigma
@@ -140,7 +141,7 @@ class Issuer(object):
 class AnonCredential(object):
     """An AnonCredential"""
 
-    def create_issue_request(self, attributes, G1, Y, g, t):
+    def create_issue_request(self, private_attributes, G1, Y, g, t, pub_attr_len):
         """Gets all known attributes (subscription) of a user and creates an issuance request.
         You are allowed to add extra attributes to the issuance.
 
@@ -152,26 +153,32 @@ class AnonCredential(object):
         v0 = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         v.append(v0)
         gamma.append(g**v0)
-        for i in range(len(attributes)):
-            C *= Y[i]**int(attributes[i])
+        for i in range(len(private_attributes)):
+            C *= Y[i+pub_attr_len]**int(private_attributes[i])
             vi = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
             v.append(vi)
-            gamma.append(Y[i]**vi)
+            gamma.append(Y[i+pub_attr_len]**vi)
         
-        to_hash = []
-        to_hash.append(C).append(g)
-        for Yi in Y:
-            to_hash.append(Yi)
+        to_hash = [C, g]
+        for i in range(len(private_attributes)):
+            to_hash.append(Y[i+pub_attr_len])
+
         for gammai in gamma:
             to_hash.append(gammai)
 
         # c = H(C, g, Y1, Y2, ..., gamma0, gamma1, gamma2)
         c_hash = hash(tuple(to_hash))
-
+        
+        
+        
         r = []
-        for vi, a in zip(v, attributes):
-            r.append(vi - c_hash*a)
-
+        for vi, a in zip(v, private_attributes):
+            res = (vi - c_hash*int(a))
+            
+            if  res < 0:
+                res = res % G1.order()
+                
+            r.append(res)
         return C, gamma, r
 
         
