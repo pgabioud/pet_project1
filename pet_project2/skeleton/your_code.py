@@ -104,14 +104,16 @@ class Client:
 
         g = server_pk.get("g")
         Yi = server_pk.get("pk")
-        t = petrelic.bn.Bn.from_num(rd.randint(1, server_pk.get("G1").order()))
+        G1= server_pk.get("G1")
+        t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
+        sk = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
+        attributes_list = attributes.split(",")
+        attributes_list.append(sk)
         
-        C = g**t
-        for i in range(len(Yi)):
-            C *= Yi[i] ** int(attributes[i])
+        AnonCredential = credential.AnonCredential()
+        C, gamma, r = AnonCredential.create_issue_request(attributes_list, G1, Yi, g, t)
 
-        hash_of_C = hash(C)
-        request = (jsonpickle.encode({"C": C, "hash": hash_of_C})).encode('utf-8')
+        request = (jsonpickle.encode({"C": C, "gamma": gamma, "r": r})).encode('utf-8')
         private_state = {"C": C, "t": t}
         return (request, private_state) 
 

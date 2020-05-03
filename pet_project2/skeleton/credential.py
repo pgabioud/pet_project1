@@ -140,18 +140,41 @@ class Issuer(object):
 class AnonCredential(object):
     """An AnonCredential"""
 
-    def create_issue_request(self, attributes, issuer_pks, issuer_g, t):
+    def create_issue_request(self, attributes, G1, Y, g, t):
         """Gets all known attributes (subscription) of a user and creates an issuance request.
         You are allowed to add extra attributes to the issuance.
 
         You should design the issue_request as you see fit.
         """
-        C = issuer_g**t
-        for Y, a in zip(issuer_pks, attributes):
-            C *= Y**int(a)
-        #ZERO KNOWLEDGE PROOF PART 1
+        C = g**t
+        v = []
+        gamma = []
+        v0 = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
+        v.append(v0)
+        gamma.append(g**v0)
+        for i in range(len(attributes)):
+            C *= Y[i]**int(attributes[i])
+            vi = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
+            v.append(vi)
+            gamma.append(Y[i]**vi)
+        
+        to_hash = []
+        to_hash.append(C).append(g)
+        for Yi in Y:
+            to_hash.append(Yi)
+        for gammai in gamma:
+            to_hash.append(gammai)
 
-        #return PROOF, C
+        # c = H(C, g, Y1, Y2, ..., gamma0, gamma1, gamma2)
+        c_hash = hash(tuple(to_hash))
+
+        r = []
+        for vi, a in zip(v, attributes):
+            r.append(vi - c_hash*a)
+
+        return C, gamma, r
+
+        
 
     def receive_issue_response(self, sigma = [0,0], t= 1):
         """This function finishes the credential based on the response of issue.
