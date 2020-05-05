@@ -6,8 +6,8 @@ Classes that you need to complete.
 from serialization import jsonpickle
 import credential
 import petrelic
-import random as rd
 import hashlib
+import random as rd
 class Server:
     """Server"""
     
@@ -31,7 +31,6 @@ class Server:
             You are free to design this as you see fit, but all commuincations
             needs to be encoded as byte arrays.
         """
-
         Issuer = credential.Issuer()
         Issuer.setup(valid_attributes.split(","))
         pub = Issuer.get_serialized_public_key()
@@ -45,7 +44,7 @@ class Server:
         """ Registers a new account on the server.
 
         Args:
-            server_sk (byte []): the server's secret key (serialized) and other parameters
+            server_sk (byte []): the server's secret key (serialized)
             issuance_request (bytes[]): The issuance request (serialized)
             username (string): username
             attributes (string): attributes
@@ -56,7 +55,6 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
-
         attributes_list = attributes.split(',')
         server_sk = jsonpickle.decode(server_sk.decode("utf-8"))
         server_pb_params = server_sk.get("public_params")
@@ -98,11 +96,12 @@ class Server:
             return bytearray(jsonpickle.encode(sigma), 'utf-8')
 
 
-    def check_request_signature(self, server_pk, message, revealed_attributes, signature):
+    def check_request_signature(
+        self, server_pk, message, revealed_attributes, signature):
         """
 
         Args:
-            server_pk (byte[]): the server's public key (serialized) and other parameters
+            server_pk (byte[]): the server's public key (serialized)
             message (byte[]): The message to sign
             revealed_attributes (string): revealed attributes
             signature (bytes[]): user's autorization (serialized)
@@ -112,7 +111,13 @@ class Server:
         Returns:
             valid (boolean): is signature valid
         """
-        raise NotImplementedError
+        revealed_attributes = revealed_attributes.split(",")
+        server_pk = jsonpickle.decode(server_pk.decode())
+        signature = credential.Signature().deserialize(signature)
+        
+        print("signature verified")
+        return signature.verify(server_pk, revealed_attributes, message)
+
 
 
 class Client:
@@ -122,7 +127,7 @@ class Client:
         """Prepare a request to register a new account on the server.
 
         Args:
-            server_pk (byte[]): a server's public key (serialized) and other parameters
+            server_pk (byte[]): a server's public key (serialized)
             username (string): username
             attributes (string): user's attributes
 
@@ -135,21 +140,19 @@ class Client:
                 from prepare_registration to proceed_registration_response.
                 You need to design the state yourself.
         """
-
         server_pk = jsonpickle.decode(server_pk.decode("utf-8"))
 
         g = server_pk.get("g")
-        Y = server_pk.get("pk")
-        G1 = server_pk.get("G1")
+        Yi = server_pk.get("pk")
+        G1= server_pk.get("G1")
         t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
-        attributes_list = attributes.split(',')
+        self.sk = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
+        attributes_list = attributes.split(",")
 
-        # secret key attribute of client
-        self.sk = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
+
         
-        # create commit and zkp
         AnonCredential = credential.AnonCredential()
-        C, gamma, r = AnonCredential.create_issue_request([self.sk], G1, Y, g, t, len(attributes_list))
+        C, gamma, r = AnonCredential.create_issue_request(self.sk, G1, Yi, g, t, len(attributes_list))
         request = (jsonpickle.encode({"C": C, "gamma": gamma, "r": r})).encode('utf-8')
         private_state = {"C": C, "t": t}
         
@@ -160,7 +163,7 @@ class Client:
         """Process the response from the server.
 
         Args:
-            server_pk (byte[]): a server's public key (serialized) and other parameters
+            server_pk (byte[]): a server's public key (serialized)
             server_response (byte[]): the response from the server (serialized)
             private_state (private_state): state from the prepare_registration
             request corresponding to this response
@@ -170,14 +173,13 @@ class Client:
         """
         sigma = jsonpickle.decode(server_response.decode('utf-8'))
         sigma = [sigma[0], sigma[1]/(sigma[0]**private_state.get("t"))]
-        
-        return bytearray(jsonpickle.encode(sigma), 'utf-8')
+        return bytearray(jsonpickle.encode({"sigma": sigma, "sk": self.sk}), 'utf-8')
 
     def sign_request(self, server_pk, credential, message, revealed_info):
         """Signs the request with the clients credential.
-
+        
         Arg:
-            server_pk (byte[]): a server's public key (serialized) and other parameters
+            server_pk (byte[]): a server's public key (serialized)
             credential (byte[]): client's credential (serialized)
             message (byte[]): message to sign
             revealed_info (string): attributes which need to be authorized
@@ -187,4 +189,15 @@ class Client:
         Returns:
             byte []: message's signature (serialized)
         """
-        raise NotImplementedError
+        from credential import Signature
+        sigma = jsonpickle.decode(credential.decode()).get("sigma")
+        sk = jsonpickle.decode(credential.decode()).get("sk")
+        server_pk = jsonpickle.decode(server_pk.decode())
+        revealed_info = revealed_info.split(",")
+        
+        signature = Signature()
+        
+        signature.create_sign_request(server_pk, sigma, message, revealed_info, sk)
+        print("sign request sent")
+        return signature.serialize()
+        
