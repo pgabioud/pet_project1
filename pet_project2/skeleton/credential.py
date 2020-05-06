@@ -269,21 +269,19 @@ class AnonCredential(object):
 class Signature(object):
     """A Signature"""
 
-    
     def create_sign_request(self, server_pk, sigma, message, revealed_attr, secret_attr):
 
         G1 = server_pk.get("G1")
         GT = server_pk.get("GT")
         gt = server_pk.get("G2").generator()
         Yt = server_pk.get("pkt")
-        Xt = Yt[0]
         Yt = Yt[1:]
         r, t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order())), petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         o = [sigma[0] ** r, (sigma[1]*(sigma[0]**t)**r)]
         
         self.message = message.decode()
         
-        C = o[1].pair(gt**t) 
+        C = o[0].pair(gt**t) 
         
         v = [petrelic.bn.Bn.from_num(rd.randint(1, GT.order()))]
         gamma = [o[0].pair(gt)**v[0]]
@@ -298,21 +296,20 @@ class Signature(object):
 
         for gammai in gamma:            
             to_hash += gammai.to_binary()
+
         # c = H(message, C, gt, Yt1, Yt2, ..., gamma0, gamma1, gamma2)
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
         print(c_hash)
+        
         r0 = v[0] - c_hash*t
         if r0 < 0:
             r0 = r0 % GT.order()
         r = [r0]  
-
         for vi, a in zip(v[1:], secret_attr):
-            res = (vi - c_hash*int(a))
-            
-            if  res < 0:
-                res = res % GT.order()
-                
-            r.append(res)
+            ri = (vi - c_hash*int(a))
+            if  ri < 0:
+                ri = ri % GT.order()  
+            r.append(ri)
        
         self.sigma = o
         '''

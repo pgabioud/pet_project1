@@ -56,9 +56,9 @@ class Server:
             with this response.
         """
         attributes_list = attributes.split(',')
-        server_sk = jsonpickle.decode(server_sk.decode("utf-8"))
+        server_sk = credential.Signature.deserialize(server_sk)
         server_pb_params = server_sk.get("public_params")
-        issuance_request = jsonpickle.decode(issuance_request)
+        issuance_request = credential.Signature.deserialize(issuance_request)
 
         # Zero Knowledge Proof verification on client commit
         C = issuance_request.get("C")
@@ -96,8 +96,7 @@ class Server:
             return bytearray(jsonpickle.encode(sigma), 'utf-8')
 
 
-    def check_request_signature(
-        self, server_pk, message, revealed_attributes, signature):
+    def check_request_signature(self, server_pk, message, revealed_attributes, signature):
         """
 
         Args:
@@ -141,7 +140,7 @@ class Client:
                 You need to design the state yourself.
         """
 
-        server_pk = jsonpickle.decode(server_pk.decode("utf-8"))
+        server_pk = credential.Signature.deserialize(server_pk)
         g = server_pk.get("g")
         Y = server_pk.get("pk")
         G1 = server_pk.get("G1")
@@ -172,7 +171,7 @@ class Client:
         """
 
         AnonCredential = credential.AnonCredential()
-        sigma_prime = jsonpickle.decode(server_response.decode('utf-8'))
+        sigma_prime = credential.Signature.deserialize(server_response)
         sigma = AnonCredential.receive_issue_response(sigma_prime, private_state.get("t"))
         return bytearray(jsonpickle.encode({"sigma": sigma, "sk": self.sk}), 'utf-8')
 
@@ -192,13 +191,12 @@ class Client:
             byte []: message's signature (serialized)
         """
 
-        from credential import Signature
         sigma = jsonpickle.decode(credential.decode()).get("sigma")
         sk = jsonpickle.decode(credential.decode()).get("sk")
         server_pk = jsonpickle.decode(server_pk.decode())
         revealed_info = revealed_info.split(",")
         
-        signature = Signature()
+        signature = credential.Signature()
         signature.create_sign_request(server_pk, sigma, message, revealed_info, sk)
         
         print("Sign request sent")
