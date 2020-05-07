@@ -74,12 +74,11 @@ class Server:
             to_hash += gammai.to_binary()
 
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
-
         gamma_prod = server_pb_params.get("G1").neutral_element()
         for gammai in gamma:
             gamma_prod *= gammai
 
-        check_prod = (C**c_hash)*(g**r[0])
+        check_prod = (C**(-c_hash))*(g**r[0])
         for i in range(len(r)-1):
             check_prod *= Y[i+len(attributes_list)]**r[i+1]
         
@@ -112,8 +111,8 @@ class Server:
         """
 
         revealed_attributes = revealed_attributes.split(",")
-        server_pk = jsonpickle.decode(server_pk.decode())
-        signature = credential.Signature().deserialize(signature)
+        server_pk = credential.Signature.deserialize(server_pk)
+        signature = credential.Signature.deserialize(signature)
         
         print("Signature verified")
         return signature.verify(server_pk, revealed_attributes, message)
@@ -146,6 +145,7 @@ class Client:
         G1 = server_pk.get("G1")
         t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         self.sk = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
+        
         attributes_list = attributes.split(",")
         
         AnonCredential = credential.AnonCredential()
@@ -176,12 +176,12 @@ class Client:
         return bytearray(jsonpickle.encode({"sigma": sigma, "sk": self.sk}), 'utf-8')
 
 
-    def sign_request(self, server_pk, credential, message, revealed_info):
+    def sign_request(self, server_pk, cred, message, revealed_info):
         """Signs the request with the clients credential.
         
         Arg:
             server_pk (byte[]): a server's public key (serialized) and other parameters
-            credential (byte[]): client's credential (serialized)
+            cred (byte[]): client's credential (serialized)
             message (byte[]): message to sign
             revealed_info (string): attributes which need to be authorized
 
@@ -190,10 +190,10 @@ class Client:
         Returns:
             byte []: message's signature (serialized)
         """
-
-        sigma = jsonpickle.decode(credential.decode()).get("sigma")
-        sk = jsonpickle.decode(credential.decode()).get("sk")
-        server_pk = jsonpickle.decode(server_pk.decode())
+        cred = credential.Signature.deserialize(cred)
+        sigma = cred.get("sigma")
+        sk = cred.get("sk")
+        server_pk = credential.Signature.deserialize(server_pk)
         revealed_info = revealed_info.split(",")
         
         signature = credential.Signature()
