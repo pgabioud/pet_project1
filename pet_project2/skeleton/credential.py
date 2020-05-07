@@ -68,7 +68,7 @@ class Issuer(object):
         the issuer.
 
         Args:
-            valid_attributes (list): all valid attributes. The issuer
+            valid_attributes (string[]): all valid attributes. The issuer
             will never be called with a value outside this list
         """
 
@@ -136,7 +136,7 @@ class Issuer(object):
         Args:
             C (G1Element): commit from user
             user (string): username of the user
-            revealed_attr (list): list of revealed attributes of the user
+            revealed_attr (private_attr): list of revealed attributes of the user
             server_sk (dict): the server's secret key and other parameters
 
         Returns:
@@ -169,7 +169,7 @@ class AnonCredential(object):
         You are allowed to add extra attributes to the issuance.
 
         Args:
-            private_attributes (list): list of private attributes of the client
+            private_attributes (string[]): list of private attributes of the client
             G1 (petrelic group): group of the issueer private key
             Y (G1Element[]): public key of the issuer
             g (G1Element): generator of G1
@@ -193,6 +193,7 @@ class AnonCredential(object):
         # => check: gamma0 * gamma1 * gamma2 * ... = C^c * g^r0 * Y1^r1 * Y2^r2 * ...
 
         C = g**t
+        print("C = ", C)
         v = []
         gamma = []
         
@@ -213,16 +214,28 @@ class AnonCredential(object):
             to_hash += gammai.to_binary()
 
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
+        print("hash cred = ", c_hash)
+
         r0 = v0 + c_hash*t
+        """
+        r0 = v0 - c_hash*t
+        if r0 < 0:
+            r0 = r0 % G1.order()
+        """
         
         r = [r0]
         for vi, a in zip(v[1:], private_attributes):
-            ri = (vi + c_hash*int(a))
-            
+            """
+            ri = (vi - c_hash*int(a))
+            if ri < 0:
+                ri = ri % G1.order()
+            """
+            ri = vi + c_hash*int(a)
             r.append(ri)
+        
         print("Issue request created")
         return C, gamma, r
-        
+
 
     def receive_issue_response(self, sigma, t):
         """This function finishes the credential based on the response of issue.
@@ -237,7 +250,7 @@ class AnonCredential(object):
         Returns:
             G1Element[]: finalized credentials
         """
-        sec = sigma[1]*(sigma[0]**(-t))
+
         return [sigma[0], sigma[1]*(sigma[0]**(-t))]
 
 
@@ -249,36 +262,24 @@ class Signature(object):
         """Signs the message.
 
         Args:
-            message (byte []): message
+            server_pk (dict): the server's public key and other parameters
             revealed_attr (string []): a list of revealed attributes
-
-        Return:
-            Signature: signature
+            sigma (G1Element[]): client's credential
+            message (byte[]): message to sign
+            revealed_attr (string[]): list of revealed attributes
+            secret_attr (string[]): list of secret attributes
+        Returns:
+            t (Bn): secret parameter used to create signature
         """
+
         G1 = server_pk.get("G1")
-        GT = server_pk.get("GT")
         gt = server_pk.get("G2").generator()
         Yt = server_pk.get("pkt")
-        Xt = Yt[0]
         Yt = Yt[1:]
         r, t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order())), petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         o = [sigma[0] ** r, (sigma[1]*(sigma[0]**t))**r]
 
         self.message = message.decode()
-        
-        #TEST e(o1, Xt PROD over all i Yt^ai) == e(o2, gt)
-        #MOVE TO PYTESTS
-        test = o[0].pair(Xt)
-        test *= o[0].pair(gt)**t
-        for i in range(len(revealed_attr)):
-            test *= o[0].pair(Yt[i])**int(revealed_attr[i])
-        for i in range(len(secret_attr)):
-            test *= o[0].pair(Yt[i + len(revealed_attr)])**int(secret_attr[i])
-
-        print("testing if test == o[1].pair(gt)", test == (o[1].pair(gt)))
-        print("done test")
-        #IF WRONG WE MESSED UP THE PREVIOUS PARTS
-
 
         # C = e(o1, gt^t) PROD in H (e(o1, Yt)^ai)
         C = o[0].pair(gt**t) 
@@ -288,7 +289,6 @@ class Signature(object):
 
         for i in range(len(secret_attr)):
             C *= (o[0].pair(Yt[i+ len(revealed_attr)]))**(petrelic.bn.Bn.from_num(secret_attr[i]))
-            
             vi = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
             v.append(vi)
             gamma.append(o[0].pair(Yt[i + len(revealed_attr)])**vi)
@@ -303,21 +303,19 @@ class Signature(object):
         # c = H(message, C, gt, Yt1, Yt2, ..., gamma0, gamma1, gamma2)
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
         
-        #test locally if C is indeed equal to e(o2, gt) PROD in D (e(o1, Yt)^-ai) / e(o1, Xt)
-
-        
         r0 = v[0] + c_hash*t        
         r = [r0]  
         for vi, a in zip(v[1:], secret_attr):
             ri = (vi + c_hash*int(a))            
             r.append(ri)       
         
-        
-        print("Sign request created")
         self.sigma = o
         self.C = C
         self.gamma = gamma
         self.r = r
+        print("Sign request created")
+
+        return t
         
         
 
@@ -326,13 +324,13 @@ class Signature(object):
 
         Args:
             issuer_public_info (): output of issuer's 'get_serialized_public_key' method
-            public_attrs (dict): public attributes
+            public_attrs (string[]): public attributes
             message (byte []): list of messages
 
         returns:
             valid (boolean): is signature valid
         """
-        print("only public", public_attrs)
+
         G1 = issuer_public_info.get("G1")
         GT = issuer_public_info.get("GT")
         gt = issuer_public_info.get("G2").generator()
@@ -352,11 +350,10 @@ class Signature(object):
             a = (self.sigma[0].pair(Yt[i])**(-int(public_attrs[i])))
             left *= a
 
-        
+        # print("!!!!!!!!!!!!!!!!!!!")
+        # print("equality test holds", left == self.C)
+        # print("!!!!!!!!!!!!!!!!!!!")
 
-        print("!!!!!!!!!!!!!!!")
-        print("equality test holds", left == self.C)
-        print("!!!!!!!!!!!!!!!!!!!")
         for i in range(len(Yt)):            
             to_hash += Yt[i].to_binary()
 
@@ -366,9 +363,7 @@ class Signature(object):
             gamma_prod *= gammai
 
         # c = H(message, C, gt, Yt1, Yt2, ..., gamma0, gamma1, gamma2)
-        
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)        
-
 
         #forget left and do as with C
         check_prod = (left**(-c_hash))*(self.sigma[0].pair(gt)**self.r[0])
@@ -385,6 +380,7 @@ class Signature(object):
         Returns: 
             byte[]: a byte array 
         """
+        
         return jsonpickle.encode(self).encode('utf-8')
 
     @staticmethod
@@ -397,6 +393,7 @@ class Signature(object):
         Returns:
             Signature
         """
+
         if type(data) == str:
             return jsonpickle.decode(data)
         else:

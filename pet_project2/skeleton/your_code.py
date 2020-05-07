@@ -144,12 +144,11 @@ class Client:
         Y = server_pk.get("pk")
         G1 = server_pk.get("G1")
         t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
-        self.sk = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
-        
+        self.private_attr = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
         attributes_list = attributes.split(",")
         
         AnonCredential = credential.AnonCredential()
-        C, gamma, r = AnonCredential.create_issue_request(self.sk, G1, Y, g, t, len(attributes_list))
+        C, gamma, r = AnonCredential.create_issue_request(self.private_attr, G1, Y, g, t, len(attributes_list))
         request = (jsonpickle.encode({"C": C, "gamma": gamma, "r": r})).encode('utf-8')
         private_state = {"C": C, "t": t}
         
@@ -173,7 +172,7 @@ class Client:
         AnonCredential = credential.AnonCredential()
         sigma_prime = credential.Signature.deserialize(server_response)
         sigma = AnonCredential.receive_issue_response(sigma_prime, private_state.get("t"))
-        return bytearray(jsonpickle.encode({"sigma": sigma, "sk": self.sk}), 'utf-8')
+        return bytearray(jsonpickle.encode({"sigma": sigma, "private_attr": self.private_attr}), 'utf-8')
 
 
     def sign_request(self, server_pk, cred, message, revealed_info):
@@ -190,14 +189,15 @@ class Client:
         Returns:
             byte []: message's signature (serialized)
         """
+        
         cred = credential.Signature.deserialize(cred)
         sigma = cred.get("sigma")
-        sk = cred.get("sk")
+        private_attr = cred.get("private_attr")
         server_pk = credential.Signature.deserialize(server_pk)
         revealed_info = revealed_info.split(",")
         
         signature = credential.Signature()
-        signature.create_sign_request(server_pk, sigma, message, revealed_info, sk)
+        signature.create_sign_request(server_pk, sigma, message, revealed_info, private_attr)
         
         print("Sign request sent")
         return signature.serialize()
