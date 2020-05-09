@@ -58,8 +58,8 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
-
-        print(time.time_ns())
+        # time to compute elapsed communication time
+        #print(time.time_ns())
 
         attributes_list = attributes.split(',')
         server_sk = credential.Signature.deserialize(server_sk)
@@ -114,7 +114,8 @@ class Server:
         Returns:
             valid (boolean): is signature valid
         """
-        print(time.time_ns())
+        # time to compute elapsed communication time
+        #print(time.time_ns())
 
         revealed_attributes = revealed_attributes.split(",")
         server_pk = credential.Signature.deserialize(server_pk)
@@ -163,7 +164,8 @@ class Client:
         private_state = {"C": C, "t": t}
         
         print("Registration request created")
-        print(time.time_ns())
+        # time to compute elapsed communication time
+        #print(time.time_ns())
         return (request, private_state) 
 
 
@@ -211,6 +213,7 @@ class Client:
         signature.create_sign_request(server_pk, sigma, message, revealed_info, private_attr)
         
         print("Sign request sent")
-        print(time.time_ns())
+        # time to compute elapsed communication time
+        #print(time.time_ns())
         return signature.serialize()
         

@@ -450,8 +450,8 @@ server.check_request_signature(server_pk, message, revealed_attr_str, sign)'''
 
 
 if __name__ == "__main__": 
-    #generate_ca_time()
-    prepare_registration_time()
+    generate_ca_time()
+    #prepare_registration_time()
     #register_time()
     #proceed_registration_response_time()
     #sign_request_time()
