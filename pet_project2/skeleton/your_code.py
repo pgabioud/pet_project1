@@ -8,6 +8,8 @@ import credential
 import petrelic
 import hashlib
 import random as rd
+import time
+
 class Server:
     """Server"""
     
@@ -57,6 +59,8 @@ class Server:
             with this response.
         """
 
+        print(time.time_ns())
+
         attributes_list = attributes.split(',')
         server_sk = credential.Signature.deserialize(server_sk)
         server_pb_params = server_sk.get("public_params")
@@ -99,7 +103,6 @@ class Server:
 
     def check_request_signature(self, server_pk, message, revealed_attributes, signature):
         """
-
         Args:
             server_pk (byte[]): the server's public key (serialized) and other parameters
             message (byte[]): The message to sign
@@ -111,6 +114,7 @@ class Server:
         Returns:
             valid (boolean): is signature valid
         """
+        print(time.time_ns())
 
         revealed_attributes = revealed_attributes.split(",")
         server_pk = credential.Signature.deserialize(server_pk)
@@ -159,6 +163,7 @@ class Client:
         private_state = {"C": C, "t": t}
         
         print("Registration request created")
+        print(time.time_ns())
         return (request, private_state) 
 
 
@@ -206,5 +211,6 @@ class Client:
         signature.create_sign_request(server_pk, sigma, message, revealed_info, private_attr)
         
         print("Sign request sent")
+        print(time.time_ns())
         return signature.serialize()
         

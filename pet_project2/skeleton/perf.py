@@ -14,7 +14,7 @@ server = Server()'''
 from your_code import Server
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 server = Server()'''
 
@@ -22,7 +22,7 @@ server = Server()'''
 from your_code import Server
 import credential
 valid_attr_str = "0"
-for i in range(99):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 server = Server()'''
 
@@ -63,12 +63,13 @@ server_pk, _ = server.generate_ca(valid_attr_str)'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(12):
-    valid_attr_str += (",1,0")
+for _ in range(7):
+    revealed_attr_str += (",1,0")
+print(len(revealed_attr_str.split(',')))
 server = Server()
 client = Client()
 server_pk, _ = server.generate_ca(valid_attr_str)'''
@@ -77,12 +78,13 @@ server_pk, _ = server.generate_ca(valid_attr_str)'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(47):
-    valid_attr_str += (",1,0")
+for _ in range(22):
+    revealed_attr_str += (",1,0")
+print(len(revealed_attr_str.split(',')))
 server = Server()
 client = Client()
 server_pk, _ = server.generate_ca(valid_attr_str)'''
@@ -124,12 +126,12 @@ request, prvt_state = client.prepare_registration(server_pk, username, revealed_
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(12):
-    valid_attr_str += (",1,0")
+for _ in range(7):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -139,12 +141,12 @@ request, prvt_state = client.prepare_registration(server_pk, username, revealed_
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(47):
-    valid_attr_str += (",1,0")
+for _ in range(22):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -188,12 +190,12 @@ response = server.register(server_sk, request, username, revealed_attr_str)'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(12):
-    valid_attr_str += (",1,0")
+for _ in range(7):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -204,12 +206,12 @@ response = server.register(server_sk, request, username, revealed_attr_str)'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(47):
-    valid_attr_str += (",1,0")
+for _ in range(22):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -256,12 +258,12 @@ message = ("i really enjoy coding the perf tests").encode()'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(12):
-    valid_attr_str += (",1,0")
+for _ in range(7):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -274,12 +276,12 @@ message = ("i really enjoy coding the perf tests").encode()'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(47):
-    valid_attr_str += (",1,0")
+for _ in range(22):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -330,12 +332,12 @@ sign = client.sign_request(server_pk, sigma, message, revealed_attr_str)'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(12):
-    valid_attr_str += (",1,0")
+for _ in range(7):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -349,12 +351,12 @@ sign = client.sign_request(server_pk, sigma, message, revealed_attr_str)'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(47):
-    valid_attr_str += (",1,0")
+for _ in range(22):
+    revealed_attr_str += (",1,0")
 server = Server()
 client = Client()
 server_pk, server_sk = server.generate_ca(valid_attr_str)
@@ -398,24 +400,24 @@ message = ("i really enjoy coding the perf tests").encode()'''
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(19):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(12):
-    valid_attr_str += (",1,0")
+for _ in range(7):
+    revealed_attr_str += (",1,0")
 message = ("i really enjoy coding the perf tests").encode()'''
 
     SETUP_CODE_3 = ''' 
 from your_code import Server, Client
 import credential
 valid_attr_str = "0"
-for i in range(29):
+for i in range(49):
     valid_attr_str += ("," + str(i+1))
 username = "oss117"
 revealed_attr_str = "1,0"
-for _ in range(47):
-    valid_attr_str += (",1,0")
+for _ in range(22):
+    revealed_attr_str += (",1,0")
 message = ("i really enjoy coding the perf tests").encode()'''
 
     TEST_CODE = '''
@@ -449,9 +451,9 @@ server.check_request_signature(server_pk, message, revealed_attr_str, sign)'''
 
 if __name__ == "__main__": 
     #generate_ca_time()
-    #prepare_registration_time()
+    prepare_registration_time()
     #register_time()
     #proceed_registration_response_time()
     #sign_request_time()
     #check_request_signature_time()
-    complete_process_time()
+    #complete_process_time()
