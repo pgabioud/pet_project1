@@ -30,6 +30,7 @@ class Server:
             You are free to design this as you see fit, but all commuincations
             needs to be encoded as byte arrays.
         """
+
         Issuer = credential.Issuer()
         Issuer.setup(valid_attributes.split(","))
         pub = Issuer.get_serialized_public_key()
@@ -55,6 +56,7 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
+
         attributes_list = attributes.split(',')
         server_sk = credential.Signature.deserialize(server_sk)
         server_pb_params = server_sk.get("public_params")
@@ -78,7 +80,7 @@ class Server:
         for gammai in gamma:
             gamma_prod *= gammai
 
-        check_prod = (C**(-c_hash))*(g**r[0])
+        check_prod = (C**((-c_hash) % server_pb_params.get("G1").order()))*(g**r[0])
         for i in range(len(r)-1):
             check_prod *= Y[i+len(attributes_list)]**r[i+1]
         
@@ -144,7 +146,11 @@ class Client:
         Y = server_pk.get("pk")
         G1 = server_pk.get("G1")
         t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
-        self.private_attr = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
+        postal = 1028
+        tel = 791234567
+        social_sec = 178051120
+        sk = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
+        self.private_attr = [postal, tel, social_sec, sk]
         attributes_list = attributes.split(",")
         
         AnonCredential = credential.AnonCredential()

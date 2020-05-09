@@ -72,7 +72,6 @@ class Issuer(object):
             will never be called with a value outside this list
         """
 
-
         # (p, g, g tilde, G1, G2, GT, secret key, public key tilde, public key)
         self.g = G1.generator()
         self.gt = G2.generator()
@@ -193,7 +192,6 @@ class AnonCredential(object):
         # => check: gamma0 * gamma1 * gamma2 * ... = C^c * g^r0 * Y1^r1 * Y2^r2 * ...
 
         C = g**t
-        print("C = ", C)
         v = []
         gamma = []
         
@@ -214,23 +212,12 @@ class AnonCredential(object):
             to_hash += gammai.to_binary()
 
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
-        print("hash cred = ", c_hash)
 
-        r0 = v0 + c_hash*t
-        """
-        r0 = v0 - c_hash*t
-        if r0 < 0:
-            r0 = r0 % G1.order()
-        """
+        r0 = (v0 + c_hash*t) % G1.order()
         
         r = [r0]
         for vi, a in zip(v[1:], private_attributes):
-            """
-            ri = (vi - c_hash*int(a))
-            if ri < 0:
-                ri = ri % G1.order()
-            """
-            ri = vi + c_hash*int(a)
+            ri = (vi + c_hash*int(a)) % G1.order()
             r.append(ri)
         
         print("Issue request created")
@@ -303,10 +290,10 @@ class Signature(object):
         # c = H(message, C, gt, Yt1, Yt2, ..., gamma0, gamma1, gamma2)
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
         
-        r0 = v[0] + c_hash*t        
+        r0 = (v[0] + c_hash*t) % G1.order()        
         r = [r0]  
         for vi, a in zip(v[1:], secret_attr):
-            ri = (vi + c_hash*int(a))            
+            ri = (vi + c_hash*int(a)) % G1.order()         
             r.append(ri)       
         
         self.sigma = o
@@ -339,7 +326,7 @@ class Signature(object):
         Yt = Yt[1:]
 
         if self.sigma[0] == G1.neutral_element():
-            print("sigma0 is neutral element")
+            print("Sigma0 is neutral element")
             return False
         
         to_hash = message + self.C.to_binary() + gt.to_binary()
@@ -366,7 +353,7 @@ class Signature(object):
         c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)        
 
         #forget left and do as with C
-        check_prod = (left**(-c_hash))*(self.sigma[0].pair(gt)**self.r[0])
+        check_prod = (left**((-c_hash) % G1.order()))*(self.sigma[0].pair(gt)**self.r[0])
         for i in range(len(self.r)-1):
             check_prod *= self.sigma[0].pair(Yt[i + len(public_attrs)])**self.r[i+1]
         

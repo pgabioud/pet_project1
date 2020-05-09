@@ -10,7 +10,7 @@ from your_code import Client, Server
 @pytest.fixture
 def input_issuer():
     issuer = Issuer()
-    issuer.setup(["male", "legal", "private_attr"])
+    issuer.setup(["major", "gender", "postal", "tel", "social_sec", "sk"])
     return issuer
 
 @pytest.fixture
@@ -31,9 +31,12 @@ def input_client():
 @pytest.fixture
 def input_cred_params():
     t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
-    private_attr = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
-    revealed_attr = [1,1]
-    return t, private_attr, revealed_attr
+    attributes = "major,gender,postal,tel,social_sec,sk"
+    private_attr = [1028, 791234567, 178051120, petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
+    username = "oss117"
+    revealed_attr_str = "1,1"
+    revealed_attr = [int(i) for i in revealed_attr_str.split(',')]
+    return t, private_attr, revealed_attr, attributes, username, revealed_attr_str
 
 #@pytest.mark.skip
 def test_pssignature():
@@ -47,64 +50,47 @@ def test_pssignature():
     assert machin.verify(pk, signature, [b"Fake news", b"apchii"])
 
 #@pytest.mark.skip
-def test_issue_request(input_server, input_issuer, input_anoncred, input_cred_params):
-    valid_attr_str = "male, legal, sk"
-    revealed_attr_str = "1,1"
-    server_pk, _ = input_server.generate_ca(valid_attr_str)
-    attributes_list = revealed_attr_str.split(",")
-    server_pk = Signature.deserialize(server_pk)
-    g = server_pk.get("g")
-    Y = server_pk.get("pk")
-    G1 = server_pk.get("G1")
+def test_issue_request(input_issuer, input_anoncred, input_cred_params):
+    attributes_list = input_cred_params[2]
+    g = input_issuer.g
+    Y = input_issuer.pk[1:]
+    G1 = input_issuer.G1
     t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
     private_attributes = [petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
-        
-    anonCredential = AnonCredential()
-    #C, gamma, r = anonCredential.create_issue_request(private_attributes, G1, Y, g, t, len(attributes_list))
     
-    #G1 = input_issuer.G1
-    g1 = G1.generator()
-    g1 = g
-    print(g1 == g)
-    """
-    t = input_cred_params[0]
-    pub_attr_len = 2
-    private_attributes = input_cred_params[1]
-    Y = input_issuer.pk[1:]
-    """
-    C, gamma, r = input_anoncred.create_issue_request(private_attributes, G1, Y, g1, t, len(attributes_list))
+    C, gamma, r = input_anoncred.create_issue_request(private_attributes, G1, Y, g, t, len(attributes_list))
 
-    to_hash = C.to_binary() + g1.to_binary()
+    to_hash = C.to_binary() + g.to_binary()
     for i in range(len(gamma)-1):
         to_hash += Y[i+len(attributes_list)].to_binary()
     for gammai in gamma:
         to_hash += gammai.to_binary()
 
     c_hash = int(hashlib.sha512(to_hash).hexdigest(), 16)
-    print("hash_test = ", c_hash)
 
     gamma_prod = G1.neutral_element()
     for gammai in gamma:
         gamma_prod *= gammai
 
-    check_prod = (C**(-c_hash))*(g1**r[0])
+    check_prod = (C**((-c_hash) % G1.order()))*(g**r[0])
     for i in range(len(r)-1):
         check_prod *= Y[i+len(attributes_list)]**r[i+1]
     
     # Prod(gammai) == C^c * g^r0 * Prod(Yi^ri)
     assert gamma_prod == check_prod
 
+
 #@pytest.mark.skip
 def test_issued_credentials(input_issuer, input_anoncred, input_cred_params):
-    username = "pgab"
+    username = input_cred_params[4]
     G1 = input_issuer.G1
     Y = input_issuer.pk[1:]
     g = input_issuer.g
     t = input_cred_params[0]
-    pub_attr_len = 2
     private_attributes = input_cred_params[1]
-    C, _, _ = input_anoncred.create_issue_request(private_attributes, G1, Y, g, t, pub_attr_len)
     revealed_attr = input_cred_params[2]
+    pub_attr_len = len(revealed_attr)
+    C, _, _ = input_anoncred.create_issue_request(private_attributes, G1, Y, g, t, pub_attr_len)
     attributes = revealed_attr + private_attributes
     server_sk = Signature.deserialize(input_issuer.get_serialized_secret_key())
     sigma = input_issuer.issue(C, username, revealed_attr, server_sk)
@@ -120,17 +106,17 @@ def test_issued_credentials(input_issuer, input_anoncred, input_cred_params):
 
 
 #@pytest.mark.skip
-def test_correct_registration(input_client, input_server):
-    valid_attr_str = "male, legal, private_attr"
-    revealed_attr_str = "1,1"
+def test_correct_registration(input_client, input_server, input_cred_params):
+    valid_attr_str = input_cred_params[3]
+    revealed_attr_str = input_cred_params[5]
     server_pk, server_sk = input_server.generate_ca(valid_attr_str)
-    username = "pgab"
+    username = input_cred_params[4]
     request, prvt_state = input_client.prepare_registration(server_pk, username, revealed_attr_str)
     response = input_server.register(server_sk, request, username, revealed_attr_str)
     sigma_serial = input_client.proceed_registration_response(server_pk, response, prvt_state)
     cred = Signature.deserialize(sigma_serial).get("sigma")
 
-    attributes = [1,1] + input_client.private_attr
+    attributes = input_cred_params[2] + input_client.private_attr
     server_pk = Signature.deserialize(server_pk)
     Yt = server_pk.get("pkt")
     gt = server_pk.get("gt")
@@ -143,11 +129,11 @@ def test_correct_registration(input_client, input_server):
 
 
 #@pytest.mark.skip
-def test_INcorrect_registration(input_client, input_server):
-    valid_attr_str = "male, legal, private_attr"
-    revealed_attr_str = "1,1"
+def test_INcorrect_registration(input_client, input_server, input_cred_params):
+    valid_attr_str = input_cred_params[3]
+    revealed_attr_str = input_cred_params[5]
     server_pk, server_sk = input_server.generate_ca(valid_attr_str)
-    username = "pgab"
+    username = input_cred_params[4]
     request, _ = input_client.prepare_registration(server_pk, username, revealed_attr_str)
 
     # incorrect commit for zkp: wrong attribute in r
@@ -161,11 +147,11 @@ def test_INcorrect_registration(input_client, input_server):
 
     
 #@pytest.mark.skip
-def test_valid_sign(input_client, input_server):
-    valid_attr_str = "male, legal, private_attr"
-    revealed_attr_str = "1,1"
+def test_valid_sign(input_client, input_server, input_cred_params):
+    valid_attr_str = input_cred_params[3]
+    revealed_attr_str = input_cred_params[5]
     server_pk, server_sk = input_server.generate_ca(valid_attr_str)
-    username = "pgab"
+    username = input_cred_params[4]
     request, prvt_state = input_client.prepare_registration(server_pk, username, revealed_attr_str)
     response = input_server.register(server_sk, request, username, revealed_attr_str)
     sigma_serial = input_client.proceed_registration_response(server_pk, response, prvt_state)
@@ -196,11 +182,11 @@ def test_valid_sign(input_client, input_server):
 
 
 #@pytest.mark.skip
-def test_verify_sign(input_client, input_server):
-    valid_attr_str = "male, legal, private_attr"
-    revealed_attr_str = "1,1"
+def test_verify_sign(input_client, input_server, input_cred_params):
+    valid_attr_str = input_cred_params[3]
+    revealed_attr_str = input_cred_params[5]
     server_pk, server_sk = input_server.generate_ca(valid_attr_str)
-    username = "pgab"
+    username = input_cred_params[4]
     request, prvt_state = input_client.prepare_registration(server_pk, username, revealed_attr_str)
     response = input_server.register(server_sk, request, username, revealed_attr_str)
     sigma_serial = input_client.proceed_registration_response(server_pk, response, prvt_state)
@@ -217,11 +203,11 @@ def test_verify_sign(input_client, input_server):
 
 
 #@pytest.mark.skip
-def test_correct_signature(input_client, input_server):
-    valid_attr_str = "male, legal, private_attr"
-    revealed_attr_str = "1,1"
+def test_correct_signature(input_client, input_server, input_cred_params):
+    valid_attr_str = input_cred_params[3]
+    revealed_attr_str = input_cred_params[5]
     server_pk, server_sk = input_server.generate_ca(valid_attr_str)
-    username = "pgab"
+    username = input_cred_params[4]
     request, prvt_state = input_client.prepare_registration(server_pk, username, revealed_attr_str)
     response = input_server.register(server_sk, request, username, revealed_attr_str)
     sigma_serial = input_client.proceed_registration_response(server_pk, response, prvt_state)
@@ -234,11 +220,11 @@ def test_correct_signature(input_client, input_server):
 
 
 #@pytest.mark.skip
-def test_INcorrect_signature(input_client, input_server):
-    valid_attr_str = "male, legal, private_attr"
-    revealed_attr_str = "1,1"
+def test_INcorrect_signature(input_client, input_server, input_cred_params):
+    valid_attr_str = input_cred_params[3]
+    revealed_attr_str = input_cred_params[5]
     server_pk, server_sk = input_server.generate_ca(valid_attr_str)
-    username = "pgab"
+    username = input_cred_params[4]
     request, prvt_state = input_client.prepare_registration(server_pk, username, revealed_attr_str)
     response = input_server.register(server_sk, request, username, revealed_attr_str)
     sigma_serial = input_client.proceed_registration_response(server_pk, response, prvt_state)
