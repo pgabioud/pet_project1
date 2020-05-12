@@ -257,6 +257,7 @@ class Signature(object):
             secret_attr (string[]): list of secret attributes
         Returns:
             t (Bn): secret parameter used to create signature
+            C (G1Element): second part of equality for signature proof
         """
 
         G1 = server_pk.get("G1")
@@ -297,12 +298,11 @@ class Signature(object):
             r.append(ri)       
         
         self.sigma = o
-        self.C = C
         self.gamma = gamma
         self.r = r
         print("Sign request created")
 
-        return t
+        return t, C
         
         
 
@@ -329,17 +329,13 @@ class Signature(object):
             print("Sigma0 is neutral element")
             return False
         
-        to_hash = message + self.C.to_binary() + gt.to_binary()
-        
         left = self.sigma[1].pair(gt)
         left *= (self.sigma[0].pair(Xt))**(-1)
         for i in range(len(public_attrs)):
             a = (self.sigma[0].pair(Yt[i])**(-int(public_attrs[i])))
             left *= a
 
-        # print("!!!!!!!!!!!!!!!!!!!")
-        # print("equality test holds", left == self.C)
-        # print("!!!!!!!!!!!!!!!!!!!")
+        to_hash = message + left.to_binary() + gt.to_binary()
 
         for i in range(len(Yt)):            
             to_hash += Yt[i].to_binary()

@@ -162,7 +162,7 @@ def test_valid_sign(input_client, input_server, input_cred_params):
     revealed_attr = revealed_attr_str.split(',')
     message = ("i really enjoy writing those tests").encode()
     signature = Signature()
-    t = signature.create_sign_request(server_pk, sigma, message, revealed_attr, private_attr)
+    t, C = signature.create_sign_request(server_pk, sigma, message, revealed_attr, private_attr)
     o = signature.sigma
 
     gt = server_pk.get("G2").generator()
@@ -178,7 +178,15 @@ def test_valid_sign(input_client, input_server, input_cred_params):
     for i in range(len(private_attr)):
         test *= o[0].pair(Yt[i + len(revealed_attr)])**int(private_attr[i])
 
-    assert (test == (o[1].pair(gt)))
+    
+    # signature proof equality
+    left = signature.sigma[1].pair(gt)
+    left *= (signature.sigma[0].pair(Xt))**(-1)
+    for i in range(len(revealed_attr)):
+        a = (signature.sigma[0].pair(Yt[i])**(-int(revealed_attr[i])))
+        left *= a
+
+    assert (test == (o[1].pair(gt)) and (left == C))
 
 
 #@pytest.mark.skip
