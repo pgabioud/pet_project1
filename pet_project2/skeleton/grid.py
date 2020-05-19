@@ -22,8 +22,8 @@ GRID_LON_POINTS = [MAP_LON + i * (MAP_SIZE_LON / CELL_NUM_LON)
 
 def location_to_cell_id(lat, lon):
     """Get the grid cell ID for a given latitude and longitude."""
-    if not (MAP_LAT <= lat < MAP_LAT + MAP_SIZE_LAT) or not (
-        MAP_LON <= lon < MAP_LON + MAP_SIZE_LON
+    if not (MAP_LAT <= lat <= MAP_LAT + MAP_SIZE_LAT) or not (
+        MAP_LON <= lon <= MAP_LON + MAP_SIZE_LON
     ):
         raise ValueError("Out of area range.")
 
