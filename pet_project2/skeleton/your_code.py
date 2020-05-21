@@ -61,7 +61,12 @@ class Server:
         # time to compute elapsed communication time
         #print(time.time_ns())
 
-        attributes_list = attributes.split(',')
+        if(attributes):
+            attributes_list = attributes.split(',')
+            pub_attr_len = len(attributes_list)
+        else:
+            attributes_list = []
+            pub_attr_len = 0
         server_sk = credential.Signature.deserialize(server_sk)
         server_pb_params = server_sk.get("public_params")
         issuance_request = credential.Signature.deserialize(issuance_request)
@@ -75,7 +80,7 @@ class Server:
 
         to_hash = C.to_binary() + g.to_binary()
         for i in range(len(gamma)-1):
-            to_hash += Y[i+len(attributes_list)].to_binary()
+            to_hash += Y[i+pub_attr_len].to_binary()
         for gammai in gamma:
             to_hash += gammai.to_binary()
 
@@ -86,7 +91,7 @@ class Server:
 
         check_prod = (C**((-c_hash) % server_pb_params.get("G1").order()))*(g**r[0])
         for i in range(len(r)-1):
-            check_prod *= Y[i+len(attributes_list)]**r[i+1]
+            check_prod *= Y[i+pub_attr_len]**r[i+1]
         
         proof_correct = (gamma_prod == check_prod)
 
@@ -101,7 +106,7 @@ class Server:
             return bytearray(jsonpickle.encode(sigma), 'utf-8')
 
 
-    def check_request_signature(self, server_pk, message, revealed_attributes, signature):
+    def check_request_signature(self, server_pk, message, revealed_attributes_str, signature):
         """
         Args:
             server_pk (byte[]): the server's public key (serialized) and other parameters
@@ -117,7 +122,10 @@ class Server:
         # time to compute elapsed communication time
         #print(time.time_ns())
 
-        revealed_attributes = revealed_attributes.split(",")
+        if(revealed_attributes_str):
+            revealed_attributes = revealed_attributes.split(",")
+        else:
+            revealed_attributes = []
         server_pk = credential.Signature.deserialize(server_pk)
         signature = credential.Signature.deserialize(signature)
         
@@ -156,10 +164,13 @@ class Client:
         social_sec = 178051120
         sk = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
         self.private_attr = [postal, tel, social_sec, sk]
-        attributes_list = attributes.split(",")
-        
+        if(attributes):
+            attributes_list = attributes.split(",")
+            pub_attr_len = len(attributes_list)
+        else:
+            pub_attr_len = 0
         AnonCredential = credential.AnonCredential()
-        C, gamma, r = AnonCredential.create_issue_request(self.private_attr, G1, Y, g, t, len(attributes_list))
+        C, gamma, r = AnonCredential.create_issue_request(self.private_attr, G1, Y, g, t, pub_attr_len)
         request = (jsonpickle.encode({"C": C, "gamma": gamma, "r": r})).encode('utf-8')
         private_state = {"C": C, "t": t}
         
@@ -188,7 +199,7 @@ class Client:
         return bytearray(jsonpickle.encode({"sigma": sigma, "private_attr": self.private_attr}), 'utf-8')
 
 
-    def sign_request(self, server_pk, cred, message, revealed_info):
+    def sign_request(self, server_pk, cred, message, revealed_info_str):
         """Signs the request with the clients credential.
         
         Arg:
@@ -207,7 +218,10 @@ class Client:
         sigma = cred.get("sigma")
         private_attr = cred.get("private_attr")
         server_pk = credential.Signature.deserialize(server_pk)
-        revealed_info = revealed_info.split(",")
+        if revealed_info_str:
+            revealed_info = revealed_info_str.split(",")
+        else:
+            revealed_info = []
         
         signature = credential.Signature()
         signature.create_sign_request(server_pk, sigma, message, revealed_info, private_attr)

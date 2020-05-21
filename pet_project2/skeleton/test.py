@@ -10,7 +10,8 @@ from your_code import Client, Server
 @pytest.fixture
 def input_issuer():
     issuer = Issuer()
-    issuer.setup(["major", "gender", "postal", "tel", "social_sec", "sk"])
+    #issuer.setup(["major", "gender", "postal", "tel", "social_sec", "sk"])
+    issuer.setup(["postal", "tel", "social_sec", "sk"])
     return issuer
 
 @pytest.fixture
@@ -31,11 +32,14 @@ def input_client():
 @pytest.fixture
 def input_cred_params():
     t = petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))
-    attributes = "major,gender,postal,tel,social_sec,sk"
+    #attributes = "major,gender,postal,tel,social_sec,sk"
+    attributes = "postal,tel,social_sec,sk"
     private_attr = [1028, 791234567, 178051120, petrelic.bn.Bn.from_num(rd.randint(1, G1.order()))]
     username = "oss117"
-    revealed_attr_str = "1,1"
-    revealed_attr = [int(i) for i in revealed_attr_str.split(',')]
+    #revealed_attr_str = "1,1"
+    revealed_attr_str = ""
+    #revealed_attr = [int(i) for i in revealed_attr_str.split(',')]
+    revealed_attr = []
     return t, private_attr, revealed_attr, attributes, username, revealed_attr_str
 
 #@pytest.mark.skip
@@ -159,7 +163,7 @@ def test_valid_sign(input_client, input_server, input_cred_params):
     private_attr = Signature.deserialize(sigma_serial).get("private_attr") 
 
     server_pk = Signature.deserialize(server_pk)
-    revealed_attr = revealed_attr_str.split(',')
+    revealed_attr = input_cred_params[2]
     message = ("i really enjoy writing those tests").encode()
     signature = Signature()
     t, C = signature.create_sign_request(server_pk, sigma, message, revealed_attr, private_attr)
@@ -202,7 +206,7 @@ def test_verify_sign(input_client, input_server, input_cred_params):
     private_attr = Signature.deserialize(sigma_serial).get("private_attr") 
 
     server_pk = Signature.deserialize(server_pk)
-    revealed_attr = revealed_attr_str.split(',')
+    revealed_attr = input_cred_params[2]
     message = ("i really enjoy debugging those tests").encode()
     signature = Signature()
     signature.create_sign_request(server_pk, sigma, message, revealed_attr, private_attr)
