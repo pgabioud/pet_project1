@@ -9,6 +9,9 @@ from sklearn.utils import shuffle
 from sklearn.model_selection import KFold
 import time
 
+from sklearn.metrics import accuracy_score
+from sklearn import tree
+
 # just to have some data
 def load_data():
     df = pd.read_pickle("data.pkl")
@@ -89,11 +92,13 @@ data, label = load_data()
 
 print(data[0])
 
-from sklearn.metrics import accuracy_score
-from sklearn import tree
 
-skf = KFold(n_splits=)
+
+skf = KFold(n_splits=10)
+accuracy_model = []
+clf = tree.DecisionTreeClassifier(criterion = 'entropy', random_state=1)
 for train_index, test_index in skf.split(data, label):
+    
     '''
     model = nn.Sequential(nn.Linear(data.size(1), 1024),
                       nn.ReLU(),
@@ -117,6 +122,10 @@ for train_index, test_index in skf.split(data, label):
     '''
     X_train, X_test = data[train_index], data[test_index]
     y_train, y_test = label[train_index], label[test_index]
+
     print(X_train.size())
-    train(model, X_train, y_train, 1e-4, 100)
-    compute_nb_errors(model, X_test, y_test, 100)
+    
+    model = clf.fit(X_train, y_train)
+    accuracy_model.append(accuracy_score(y_test, model.predict(X_test), normalize=True)*100)
+
+print(accuracy_model)
