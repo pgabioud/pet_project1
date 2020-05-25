@@ -19,17 +19,18 @@ def process_packets(dirname, output):
         packets = rdpcap(pcap_path)
         for pkt in packets:
             #pkt.show()
-            #tcp_pkt = IP()/TCP()
-            #print(tcp_pkt)
-            #if tcp_pkt.haslayer(TCP) in packets:
-                #print("here")
-            print(len(pkt[TCP].payload))
-            if pkt[IP].src in IP_ADDR:
-                #print("there")
-                lengths.append(-len(pkt))
-            elif pkt[IP].dst in IP_ADDR:
-                #print("everywhere")
-                lengths.append(len(pkt))
+            if pkt.haslayer(TCP):
+                #print(len(pkt[TCP].payload))
+                if pkt[IP].src in IP_ADDR:
+                    if(len(pkt[TCP].payload)) == 0:
+                        lengths.append(-1)
+                    else:         
+                        lengths.append(-len(pkt[TCP].payload))
+                elif pkt[IP].dst in IP_ADDR:
+                    if(len(pkt[TCP].payload)) == 0:
+                        lengths.append(1)
+                    else:   
+                        lengths.append(len(pkt[TCP].payload))
                 
         data_dict[case]['lengths'] = lengths
         data_dict[case]['time'] = str(round(packets[len(packets)-1].time - packets[0].time, 3))

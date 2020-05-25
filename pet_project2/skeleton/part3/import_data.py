@@ -23,7 +23,7 @@ def import_data():
                         for i in data['lengths']:
                             length.append(float(i))
                         row['lengths'] = np.array(length)
-                        row['times'] = data['time']
+                        row['times'] = float(data['time'])
                         df = df.append(row, ignore_index = True)
     print(df)
     return df
