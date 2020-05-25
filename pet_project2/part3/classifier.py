@@ -19,16 +19,18 @@ def load_data():
     size_data = []
     for length in df['lengths']:
         t = length[abs(length) != 597]
-        t = t[abs(t) != 54]
         size_data.append(len(t))
     max_size = np.max(np.array(size_data))
     
+    
+
+
+
 
     data = np.zeros((len(df), max_size), np.float64)
     cnt = 0
     for i in df['lengths'].values:
         i = i[abs(i) != 597]
-        i = i[abs(i) != 54]
         data[cnt, :i.shape[0]] += i[:]
         cnt += 1
 
@@ -45,14 +47,15 @@ def load_data():
 def train(model, train_input, train_target, learning_rate, batch_size):
 
     criterion = nn.CrossEntropyLoss()
-    opt = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    epochs = 20
+    opt = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay = 1e-4)
+    epochs = 100
     for e in range(epochs):
         sum_loss = 0
 
         for b in range(0, train_input.size(0), batch_size):
 
             pred = model(train_input.narrow(0, b, batch_size))
+           
             loss = criterion(pred, train_target.narrow(0, b, batch_size))
             sum_loss += loss.item()
 
@@ -76,7 +79,7 @@ def compute_nb_errors(model, input, target, batch_size):
         for k in range(batch_size):
             if target[b + k] != predicted[k]:
                 nb_errors += 1
-    print(nb_errors)
+    print("accuracy = {:0.2f}".format(1 - nb_errors/len(target)))
     return nb_errors
 
 
@@ -85,32 +88,35 @@ def compute_nb_errors(model, input, target, batch_size):
 data, label = load_data()
 
 print(data[0])
-model = nn.Sequential(nn.Linear(data.size(1), 1024),
+
+from sklearn.metrics import accuracy_score
+from sklearn import tree
+
+skf = KFold(n_splits=)
+for train_index, test_index in skf.split(data, label):
+    '''
+    model = nn.Sequential(nn.Linear(data.size(1), 1024),
                       nn.ReLU(),
                       nn.Linear(1024, 1024),
                       nn.ReLU(),
-                      nn.Linear(1024, 1024),
+                      nn.Linear(1024, 256),
                       nn.ReLU(),
-                      nn.Linear(1024, 1024),
+                      nn.Linear(256, 256),
                       nn.ReLU(),
-                      nn.Linear(1024, 512),
+                      nn.Linear(256, 256),
                       nn.ReLU(),
-                      nn.Linear(512, 512),
+                      nn.Linear(256, 256),
                       nn.ReLU(),
-                      nn.Linear(512, 256),
+                      nn.Linear(256, 256),
+                      nn.ReLU(),
+                      nn.Linear(256, 256),
                       nn.ReLU(),
                       nn.Linear(256, 100),
 
                       nn.Softmax(dim=1))
-
-skf = KFold(n_splits=10)
-t0 = time.time()
-for train_index, test_index in skf.split(data, label):
+    '''
     X_train, X_test = data[train_index], data[test_index]
     y_train, y_test = label[train_index], label[test_index]
     print(X_train.size())
     train(model, X_train, y_train, 1e-4, 100)
     compute_nb_errors(model, X_test, y_test, 100)
-t1 = time.time()
-print(t1-t0)
-compute_nb_errors(model, data, label, 100)
