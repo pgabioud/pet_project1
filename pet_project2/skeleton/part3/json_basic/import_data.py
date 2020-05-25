@@ -17,13 +17,15 @@ def import_data():
                 row['fname'] = os.path.basename(fname)
                 with open(fname) as f:
                     data_dict = json.loads(f.read())
-                    for case, lengths in data_dict.items():
+                    for case, data in data_dict.items():
                         row['case'] = int(case)
                         length = []
-                        for i in lengths:
+                        for i in data['lengths']:
                             length.append(float(i))
                         row['lengths'] = np.array(length)
+                        row['times'] = data['time']
                         df = df.append(row, ignore_index = True)
+    print(df)
     return df
 
 if __name__ == "__main__":

@@ -30,7 +30,8 @@ def process_packets(dirname, output):
                 #print("everywhere")
                 lengths.append(len(pkt))
                 
-        data_dict[case] = lengths
+        data_dict[case]['lengths'] = lengths
+        data_dict[case]['time'] = str(round(packets[len(packets)-1].time - packets[0].time, 3))
 
     with open(output, 'w') as outfile:
         json.dump(data_dict, outfile, sort_keys=True, indent=4)
