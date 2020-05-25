@@ -4,6 +4,8 @@ import pandas as pd
 import torch
 import sklearn
 
+from sklearn.utils import shuffle
+
 import numpy as np
 def import_data():
     resultDirectory = "pickle"
@@ -23,21 +25,25 @@ def import_data():
                             length.append(float(i))
                         row['lengths'] = np.array(length)
                         df = df.append(row, ignore_index = True)
-    return df
+    return shuffle(df, random_state = 1)
 
 if __name__ == "__main__":
     df = import_data()
     
     label = torch.tensor(df['case'].values)
-    
+    size_data = []
+    for length in df['lengths']:
+        size_data.append(len(length))
+    max_size = np.max(np.array(size_data))
 
     
-    data = np.zeros((3000, 1262), np.float64)
+    data = np.zeros((3000, max_size), np.float64)
     cnt = 0
     for i in df['lengths'].values:
         
         data[cnt, :i.shape[0]] += i[:]
         cnt += 1
+    
     
     data = torch.FloatTensor(data)
 
