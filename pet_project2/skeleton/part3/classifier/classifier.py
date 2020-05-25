@@ -18,17 +18,28 @@ def load_data():
     df = shuffle(df, random_state=1)
 
     label = torch.LongTensor(df['case'].values)
+    timestamps = np.array(df['times'].values)
+    
+    
     label = label - 1
     size_data = []
+    avg_length_data = []
+    max_length_data = []
+    min_length_data = []
+    percent_server_data = []
     for length in df['lengths']:
-        t = length[abs(length) != 597]
-        
+        #t = length[abs(length) != 597]
+        t = length
         size_data.append(len(t))
+        percent_server_data.append(len(t[t < 0]) / len(t))
+        avg_length_data.append(np.mean(abs(t)))
+        max_length_data.append(np.max(abs(t)))
+        min_length_data.append(np.min(abs(t)))
     max_size = np.max(np.array(size_data))
     
     
 
-
+    datum = np.array([size_data, avg_length_data, max_length_data, min_length_data, percent_server_data, timestamps])
 
 
     data = np.zeros((len(df), max_size), np.float64)
@@ -37,14 +48,15 @@ def load_data():
         i = i[abs(i) != 597]
         
         data[cnt, :i.shape[0]] += i[:]
+        
         cnt += 1
-
     data = torch.FloatTensor(data)
-    
+    data = torch.cat((torch.FloatTensor(timestamps).unsqueeze(dim = 1), data), dim = 1)
     print(label.size(), data.size())
-
     
-    return data, label
+    datum = torch.Tensor(datum.T)
+    
+    return datum, data, label
 
 # train function using sgd with cross entropy loss
 
@@ -90,7 +102,7 @@ def compute_nb_errors(model, input, target, batch_size):
 
 
 
-data, label = load_data()
+datum, data, label = load_data()
 
 print(data[0])
 
@@ -99,16 +111,16 @@ print(data[0])
 skf = KFold(n_splits=10)
 accuracy_model = []
 clf = RandomForestClassifier(random_state=1)
-for train_index, test_index in skf.split(data, label):
+for train_index, test_index in skf.split(datum, label):
     
     '''
-    model = nn.Sequential(nn.Linear(data.size(1), 1024),
+    model = nn.Sequential(nn.Linear(datum.size(1), 16),
                       nn.ReLU(),
-                      nn.Linear(1024, 1024),
+                      nn.Linear(16, 32),
                       nn.ReLU(),
-                      nn.Linear(1024, 256),
+                      nn.Linear(32, 64),
                       nn.ReLU(),
-                      nn.Linear(256, 256),
+                      nn.Linear(64, 256),
                       nn.ReLU(),
                       nn.Linear(256, 256),
                       nn.ReLU(),
@@ -122,12 +134,15 @@ for train_index, test_index in skf.split(data, label):
 
                       nn.Softmax(dim=1))
     '''
-    X_train, X_test = data[train_index], data[test_index]
+    X_train, X_test = datum[train_index], datum[test_index]
     y_train, y_test = label[train_index], label[test_index]
 
     print(X_train.size())
     
-    model = clf.fit(X_train, y_train)
-    accuracy_model.append(accuracy_score(y_test, model.predict(X_test), normalize=True)*100)
-
+    model2 = clf.fit(X_train, y_train)
+    accuracy_model.append(accuracy_score(y_test, model2.predict(X_test), normalize=True)*100)
+    '''
+    train(model, X_train, y_train, 1e-3, 100)
+    compute_nb_errors(model, X_test, y_test, 100)
+    '''
 print(accuracy_model)
