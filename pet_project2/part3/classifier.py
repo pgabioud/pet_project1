@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 import time
 
 from sklearn.metrics import accuracy_score
-from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
 
 # just to have some data
 def load_data():
@@ -22,6 +22,7 @@ def load_data():
     size_data = []
     for length in df['lengths']:
         t = length[abs(length) != 597]
+        
         size_data.append(len(t))
     max_size = np.max(np.array(size_data))
     
@@ -34,6 +35,7 @@ def load_data():
     cnt = 0
     for i in df['lengths'].values:
         i = i[abs(i) != 597]
+        
         data[cnt, :i.shape[0]] += i[:]
         cnt += 1
 
@@ -96,7 +98,7 @@ print(data[0])
 
 skf = KFold(n_splits=10)
 accuracy_model = []
-clf = tree.DecisionTreeClassifier(criterion = 'entropy', random_state=1)
+clf = RandomForestClassifier(random_state=1)
 for train_index, test_index in skf.split(data, label):
     
     '''
