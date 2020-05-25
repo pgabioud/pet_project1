@@ -10,9 +10,7 @@ def process_packets(dirname, output):
     IP_ADDR = ['46.4.88.92']
 
     for pcapfile in flist:
-        sent_lengths = []
-        received_lengths = []
-        order = []
+        lengths = []
         case = pcapfile.split('.')[0]
         data_dict[case] = {}
 
@@ -27,16 +25,12 @@ def process_packets(dirname, output):
                 #print("here")
             if pkt[IP].src in IP_ADDR:
                 #print("there")
-                received_lengths.append(len(pkt))
-                order.append(-1)
+                lengths.append(-len(pkt))
             elif pkt[IP].dst in IP_ADDR:
                 #print("everywhere")
-                sent_lengths.append(len(pkt))
-                order.append(1)
+                lengths.append(len(pkt))
                 
-        data_dict[case]['sent'] = sent_lengths
-        data_dict[case]['received'] = received_lengths
-        data_dict[case]['order'] = order
+        data_dict[case] = lengths
 
     with open(output, 'w') as outfile:
         json.dump(data_dict, outfile, sort_keys=True, indent=4)
