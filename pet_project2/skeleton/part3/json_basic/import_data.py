@@ -1,10 +1,11 @@
 import json
 import os
 import pandas as pd
+import torch
+import sklearn
 
-
-
-if __name__ == "__main__":
+import numpy as np
+def import_data():
     resultDirectory = "pickle"
     #os.mkdir(resultDirectory)
     df = pd.DataFrame()
@@ -16,7 +17,28 @@ if __name__ == "__main__":
                 with open(fname) as f:
                     data_dict = json.loads(f.read())
                     for case, lengths in data_dict.items():
-                        row['case'] = case
-                        row['lengths'] = lengths
+                        row['case'] = int(case)
+                        length = []
+                        for i in lengths:
+                            length.append(float(i))
+                        row['lengths'] = np.array(length)
                         df = df.append(row, ignore_index = True)
-    print(df)
+    return df
+
+if __name__ == "__main__":
+    df = import_data()
+    
+    label = torch.tensor(df['case'].values)
+    
+
+    
+    data = np.zeros((3000, 1262), np.float64)
+    cnt = 0
+    for i in df['lengths'].values:
+        
+        data[cnt, :i.shape[0]] += i[:]
+        cnt += 1
+    
+    data = torch.FloatTensor(data)
+
+    print(label.size(), data.size())
