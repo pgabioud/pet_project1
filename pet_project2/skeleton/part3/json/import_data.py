@@ -25,7 +25,8 @@ def import_data():
                         row['lengths'] = np.array(length)
                         row['times'] = float(data['time'])
                         df = df.append(row, ignore_index = True)
-    print(df)
+    with pd.option_context('display.expand_frame_repr', False):
+        print(df)
     return df
 
 if __name__ == "__main__":

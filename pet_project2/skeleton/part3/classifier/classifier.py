@@ -149,7 +149,7 @@ for train_index, test_index in skf.split(datum, label):
     y_train, y_test = label[train_index], label[test_index]
 
     print(X_train.size())
-    for nb in [170, 190, 200, 220, 250, 300]:
+    for nb in [500, 700, 1000, 1200, 1500]:
         for feat in ['auto', 'sqrt']:
             for min_sample in [1, 2, 4]:
                 for min_samples_split in [2, 5, 10]:

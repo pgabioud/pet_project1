@@ -11,6 +11,7 @@ def process_packets(dirname, output):
 
     for pcapfile in flist:
         lengths = []
+        times = []
         case = pcapfile.split('.')[0]
         data_dict[case] = {}
 
@@ -21,18 +22,21 @@ def process_packets(dirname, output):
             #pkt.show()
             #tcp_pkt = IP()/TCP()
             #print(tcp_pkt)
-            #if tcp_pkt.haslayer(TCP) in packets:
+            #if tcp_pkt.haslayer(TCP):
                 #print("here")
-            print(len(pkt[TCP].payload))
+            #print(len(pkt[TCP].payload))
+            init_time = packets[0].time
             if pkt[IP].src in IP_ADDR:
                 #print("there")
                 lengths.append(-len(pkt))
+                times.append(str(round(pkt.time -  init_time, 3)))
             elif pkt[IP].dst in IP_ADDR:
                 #print("everywhere")
                 lengths.append(len(pkt))
+                times.append(str(round(pkt.time -  init_time, 3)))
                 
         data_dict[case]['lengths'] = lengths
-        data_dict[case]['time'] = str(round(packets[len(packets)-1].time - packets[0].time, 3))
+        data_dict[case]['times'] = times
 
     with open(output, 'w') as outfile:
         json.dump(data_dict, outfile, sort_keys=True, indent=4)
