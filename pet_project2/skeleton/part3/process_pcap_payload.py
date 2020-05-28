@@ -7,10 +7,11 @@ import os
 def process_packets(dirname, output):
     data_dict = {}
     flist = os.listdir(dirname)
-    IP_ADDR = ['46.4.88.92']
+    IP_ADDR = ['88.99.31.186']
 
     for pcapfile in flist:
         lengths = []
+        times = []
         case = pcapfile.split('.')[0]
         data_dict[case] = {}
 
@@ -21,19 +22,22 @@ def process_packets(dirname, output):
             #pkt.show()
             if pkt.haslayer(TCP):
                 #print(len(pkt[TCP].payload))
+                init_time = packets[0].time
                 if pkt[IP].src in IP_ADDR:
+                    times.append(str(round(pkt.time - init_time, 3)))
                     if(len(pkt[TCP].payload)) == 0:
                         lengths.append(-1)
                     else:         
                         lengths.append(-len(pkt[TCP].payload))
                 elif pkt[IP].dst in IP_ADDR:
+                    times.append(str(round(pkt.time - init_time, 3)))
                     if(len(pkt[TCP].payload)) == 0:
                         lengths.append(1)
                     else:   
                         lengths.append(len(pkt[TCP].payload))
                 
         data_dict[case]['lengths'] = lengths
-        data_dict[case]['time'] = str(round(packets[len(packets)-1].time - packets[0].time, 3))
+        data_dict[case]['times'] = times
 
     with open(output, 'w') as outfile:
         json.dump(data_dict, outfile, sort_keys=True, indent=4)
