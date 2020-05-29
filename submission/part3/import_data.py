@@ -3,12 +3,9 @@ import os
 import pandas as pd
 import torch
 import sklearn
-
-
 import numpy as np
+
 def import_data():
-    resultDirectory = "pickle"
-    #os.mkdir(resultDirectory)
     df = pd.DataFrame()
     for _,_,f_names in os.walk("."):
         for fname in f_names:

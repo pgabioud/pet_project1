@@ -1,6 +1,6 @@
 # SecretStroll
 
-## PART 1```
+## PART 1
 
 ### A sample run of Part 1
 Here we show a typical run of the system for Part 1 with the following privates attributes: "postal, tel, social_sec, sk" and public attributes "bar, gym".
