@@ -3,10 +3,10 @@
 ## PART 1
 
 ### A sample run of Part 1
-Here we show a typical run of the system for Part 1 with the following privates attributes: "postal, tel, social_sec, sk" and public attributes "bar, gym".
-A client wishing to subscribe to bar but not gym would set his public attributes to "1,0".
-Here the client username is "clement"
-Note that the public attributes can be of any length the server wishes to provide a service for. 
+Here we show a typical run of the system for Part 1 with the following privates attributes: "postal, tel, social_sec, sk" and public attributes "bar, gym".  
+A client wishing to subscribe to bar but not gym would set his public attributes to "1,0".  
+Here the client username is "clement"  
+Note that the public attributes can be of any length the server wishes to provide a service for.  
 
 Initialization:
 ```
