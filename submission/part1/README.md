@@ -37,18 +37,21 @@ $ docker exec -it cs523-client /bin/bash
 (client) $ python3 client.py loc -p key-client.pub -c attr.cred -r "1,0" 46.52345 6.57890
 
 ```
-
+Close docker:
+```
 $ docker-compose down
+```
 
 ### Tests
 To run the tests:
-
+```
 $ pytest test.py
-
+```
 
 ### Performance evaluation
 To run the performance evaluation of the computation time:
-
+```
 $ python3 perf.py
+```
 
 
