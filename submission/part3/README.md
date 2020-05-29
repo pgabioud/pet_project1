@@ -37,10 +37,10 @@ $ docker exec -it cs523-client /bin/bash
 ```
 
 ### Feature exctraction
-Copy the "process_\pcap\_payload.py" into the repository with all the subfolders containing the pcap files.
+Copy the "process_pcap\_payload.py" into the repository with all the subfolders containing the pcap files.
 Then run:
 
-$ python3 process_\pcap\_payload.py
+$ python3 process_pcap\_payload.py
 
 
 Copy in the created "result_json" folder the "import\_data.py" file, and then run:
